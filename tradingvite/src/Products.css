@@ -1,0 +1,362 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.products-container {
+  display: flex;
+  height: 100vh;
+  background-color: #131722;
+  color: #d1d4dc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #2a2e39;
+}
+
+.stock-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stock-symbol {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.stock-exchange {
+  font-size: 14px;
+  color: #787b86;
+  padding: 4px 8px;
+  background-color: #1e222d;
+  border-radius: 4px;
+}
+
+.stock-price-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.current-price {
+  font-size: 32px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.price-change {
+  font-size: 16px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+
+.price-change.positive {
+  color: #26a69a;
+  background-color: rgba(38, 166, 154, 0.1);
+}
+
+.price-change.negative {
+  color: #ef5350;
+  background-color: rgba(239, 83, 80, 0.1);
+}
+
+.chart-placeholder {
+  flex: 1;
+  background-color: #1e222d;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  min-height: 400px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-info {
+  margin-bottom: 20px;
+}
+
+.stock-name {
+  font-size: 18px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 5px;
+}
+
+.stock-sector {
+  font-size: 14px;
+  color: #787b86;
+}
+
+.price-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 300px;
+  gap: 2px;
+  margin-top: 30px;
+}
+
+.price-bar {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 2px 2px 0 0;
+  transition: all 0.3s ease;
+}
+
+.stock-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  background-color: #1e222d;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.detail-label {
+  color: #787b86;
+  font-size: 14px;
+}
+
+.detail-value {
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.watchlist-sidebar {
+  width: 380px;
+  background-color: #1e222d;
+  border-left: 1px solid #2a2e39;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.watchlist-title {
+  padding: 20px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  border-bottom: 1px solid #2a2e39;
+}
+
+.stocks-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.list-section {
+  border-bottom: 1px solid #2a2e39;
+  padding: 15px 0;
+}
+
+.section-title {
+  font-size: 12px;
+  color: #787b86;
+  padding: 8px 20px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.stock-item {
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.stock-item:hover {
+  background-color: #2a2e39;
+}
+
+.stock-item.active {
+  background-color: #2a2e39;
+  border-left-color: #2962ff;
+}
+
+.stock-item-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.stock-item-symbol {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.stock-item-price {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.stock-item-change {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.positive {
+  color: #26a69a;
+}
+
+.negative {
+  color: #ef5350;
+}
+
+.stock-detail-panel {
+  background-color: #131722;
+  border-top: 1px solid #2a2e39;
+  padding: 20px;
+}
+
+.detail-header {
+  margin-bottom: 15px;
+}
+
+.detail-header h3 {
+  font-size: 16px;
+  color: #ffffff;
+  margin-bottom: 5px;
+}
+
+.detail-price {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.detail-info {
+  margin-top: 15px;
+}
+
+.market-status {
+  font-size: 12px;
+  color: #787b86;
+  margin-bottom: 15px;
+}
+
+.key-stats {
+  margin-top: 15px;
+}
+
+.key-stats h4 {
+  font-size: 14px;
+  color: #ffffff;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #2a2e39;
+}
+
+.stat-row span:first-child {
+  color: #787b86;
+}
+
+.stat-row span:last-child {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* Scrollbar Styling */
+.watchlist-sidebar::-webkit-scrollbar,
+.main-content::-webkit-scrollbar,
+.stocks-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.watchlist-sidebar::-webkit-scrollbar-track,
+.main-content::-webkit-scrollbar-track,
+.stocks-list::-webkit-scrollbar-track {
+  background: #1e222d;
+}
+
+.watchlist-sidebar::-webkit-scrollbar-thumb,
+.main-content::-webkit-scrollbar-thumb,
+.stocks-list::-webkit-scrollbar-thumb {
+  background: #2a2e39;
+  border-radius: 4px;
+}
+
+.watchlist-sidebar::-webkit-scrollbar-thumb:hover,
+.main-content::-webkit-scrollbar-thumb:hover,
+.stocks-list::-webkit-scrollbar-thumb:hover {
+  background: #363a45;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .watchlist-sidebar {
+    width: 300px;
+  }
+  
+  .stock-details {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .products-container {
+    flex-direction: column;
+  }
+  
+  .watchlist-sidebar {
+    width: 100%;
+    max-height: 50vh;
+    border-left: none;
+    border-top: 1px solid #2a2e39;
+  }
+  
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .stock-details {
+    grid-template-columns: 1fr;
+  }
+  
+  .current-price {
+    font-size: 24px;
+  }
+  
+  .price-change {
+    font-size: 14px;
+  }
+}
