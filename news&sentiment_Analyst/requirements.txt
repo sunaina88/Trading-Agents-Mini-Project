@@ -1,0 +1,7 @@
+feedparser
+requests
+praw
+transformers
+torch
+python-dotenv
+
