@@ -29,7 +29,6 @@
   filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.45));
 }
 
-
 ul {
   flex: 1;
   list-style: none;
@@ -305,7 +304,9 @@ ul li a {
   text-decoration: none;
   padding: 6px 14px;
   border-radius: 20px;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
 }
 
 ul li a:hover {

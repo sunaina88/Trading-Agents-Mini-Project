@@ -1,60 +1,77 @@
-import React, { useState, useEffect, useRef } from "react";
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  LineChart, Line,
+  AreaChart, Area,
+  XAxis, YAxis, Tooltip,
+  ResponsiveContainer, CartesianGrid
+} from "recharts";
 import "./Home.css";
 
+// ---------------------------------------------------------------------------
+// Stable particle positions — generated once, never on re-render
+// ---------------------------------------------------------------------------
+const PARTICLE_COUNT = 20;
+
 function Home() {
-  const [marketData, setMarketData] = useState([]);
-  const [globalStats, setGlobalStats] = useState(null);
-  const [forexData, setForexData] = useState([]);
-  const [stockIndices, setStockIndices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [chartData, setChartData] = useState({});
-  const [globalChart, setGlobalChart] = useState([]);
+  const navigate = useNavigate();
+
+  const [marketData,    setMarketData]    = useState([]);
+  const [globalStats,   setGlobalStats]   = useState(null);
+  const [forexData,     setForexData]     = useState([]);
+  const [stockIndices,  setStockIndices]  = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [chartData,     setChartData]     = useState({});
+  const [globalChart,   setGlobalChart]   = useState([]);
   const [intradayChart, setIntradayChart] = useState([]);
-  const [timeRange, setTimeRange] = useState('1D');
-  const [scrollY, setScrollY] = useState(0);
-  const [activeCard, setActiveCard] = useState(null);
+  const [timeRange,     setTimeRange]     = useState("1D");
+  const [scrollY,       setScrollY]       = useState(0);
+  const [activeCard,    setActiveCard]    = useState(null);
   const heroRef = useRef(null);
 
-  // Parallax scroll effect
+  // FIX: stable particle data — useMemo ensures positions don't change on
+  // every re-render (previously Math.random() ran fresh each render cycle)
+  const particles = useMemo(
+    () =>
+      Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
+        id: i,
+        left:     `${Math.random() * 100}%`,
+        animDelay:`${Math.random() * 5}s`,
+        animDur:  `${15 + Math.random() * 10}s`,
+      })),
+    [] // empty deps → computed once on mount
+  );
+
+  // Parallax scroll
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Generate realistic intraday chart data
   const generateIntradayData = () => {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 30);
+    const now  = new Date();
     const data = [];
-    let basePrice = 25500;
-    let currentPrice = basePrice;
+    let currentPrice = 25500;
 
-    // Generate data points every 5 minutes from 9:30 AM to current time
-    const currentMinutes = (now.getHours() * 60 + now.getMinutes());
-    const startMinutes = 9 * 60 + 30; // 9:30 AM
-    const endMinutes = Math.min(currentMinutes, 16 * 60); // Up to 4:00 PM or current time
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const startMinutes   = 9 * 60 + 30;
+    const endMinutes     = Math.min(currentMinutes, 16 * 60);
 
     for (let minutes = startMinutes; minutes <= endMinutes; minutes += 5) {
       const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
-      const time = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-      
-      // Add realistic price movements with volatility
+      const mins  = minutes % 60;
+      const time  = `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
       const volatility = Math.random() * 40 - 20;
-      const trend = -0.5; // Slight downward trend
+      const trend      = -0.5;
       currentPrice += trend + volatility;
-      
       data.push({
         time,
-        price: parseFloat(currentPrice.toFixed(2)),
-        volume: Math.random() * 1000000 + 500000
+        price:  parseFloat(currentPrice.toFixed(2)),
+        volume: Math.random() * 1_000_000 + 500_000,
       });
     }
-
     return data;
   };
 
@@ -63,82 +80,83 @@ function Home() {
     const fetchMarketData = async () => {
       try {
         const cryptoResponse = await fetch(
-          'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=6&page=1&sparkline=true&price_change_percentage=24h'
+          "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=6&page=1&sparkline=true&price_change_percentage=24h"
         );
         const cryptoData = await cryptoResponse.json();
-        
-        const globalResponse = await fetch('https://api.coingecko.com/api/v3/global');
-        const globalData = await globalResponse.json();
-        
-        const forexResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-        const forexRates = await forexResponse.json();
-        
+
+        const globalResponse = await fetch("https://api.coingecko.com/api/v3/global");
+        const globalData     = await globalResponse.json();
+
+        const forexResponse = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+        const forexRates    = await forexResponse.json();
+
         const majorPairs = [
-          { pair: 'EUR/USD', rate: forexRates.rates.EUR, base: 'EUR' },
-          { pair: 'GBP/USD', rate: forexRates.rates.GBP, base: 'GBP' },
-          { pair: 'USD/JPY', rate: forexRates.rates.JPY, base: 'JPY' },
-          { pair: 'USD/CHF', rate: forexRates.rates.CHF, base: 'CHF' },
-          { pair: 'AUD/USD', rate: forexRates.rates.AUD, base: 'AUD' },
-          { pair: 'USD/CAD', rate: forexRates.rates.CAD, base: 'CAD' }
+          { pair: "EUR/USD", rate: forexRates.rates.EUR, base: "EUR" },
+          { pair: "GBP/USD", rate: forexRates.rates.GBP, base: "GBP" },
+          { pair: "USD/JPY", rate: forexRates.rates.JPY, base: "JPY" },
+          { pair: "USD/CHF", rate: forexRates.rates.CHF, base: "CHF" },
+          { pair: "AUD/USD", rate: forexRates.rates.AUD, base: "AUD" },
+          { pair: "USD/CAD", rate: forexRates.rates.CAD, base: "CAD" },
         ];
-        
-        const processedForex = majorPairs.map(pair => ({
+
+        const processedForex = majorPairs.map((pair) => ({
           ...pair,
           change: (Math.random() * 2 - 1).toFixed(2),
-          volume: `$${(Math.random() * 500 + 100).toFixed(0)}B`
+          volume: `$${(Math.random() * 500 + 100).toFixed(0)}B`,
         }));
-        
+
         const indices = [
-          { name: 'S&P 500', symbol: 'SPX', price: '4,783.45', change: '+0.85', volume: '$2.1T', up: true },
-          { name: 'NASDAQ', symbol: 'IXIC', price: '15,011.35', change: '+1.12', volume: '$1.8T', up: true },
-          { name: 'DOW JONES', symbol: 'DJI', price: '37,248.35', change: '+0.43', volume: '$1.5T', up: true },
-          { name: 'FTSE 100', symbol: 'FTSE', price: '7,512.45', change: '-0.21', volume: '$890B', up: false },
-          { name: 'DAX', symbol: 'GDAXI', price: '16,742.89', change: '+0.67', volume: '$720B', up: true },
-          { name: 'NIKKEI 225', symbol: 'N225', price: '33,464.17', change: '+1.23', volume: '$650B', up: true }
+          { name: "S&P 500",    symbol: "SPX",   price: "4,783.45",  change: "+0.85", volume: "$2.1T", up: true  },
+          { name: "NASDAQ",     symbol: "IXIC",  price: "15,011.35", change: "+1.12", volume: "$1.8T", up: true  },
+          { name: "DOW JONES",  symbol: "DJI",   price: "37,248.35", change: "+0.43", volume: "$1.5T", up: true  },
+          { name: "FTSE 100",   symbol: "FTSE",  price: "7,512.45",  change: "-0.21", volume: "$890B", up: false },
+          { name: "DAX",        symbol: "GDAXI", price: "16,742.89", change: "+0.67", volume: "$720B", up: true  },
+          { name: "NIKKEI 225", symbol: "N225",  price: "33,464.17", change: "+1.23", volume: "$650B", up: true  },
         ];
-        
+
         setMarketData(cryptoData);
         setGlobalStats(globalData.data);
         setForexData(processedForex);
         setStockIndices(indices);
-        
+
         const charts = {};
-        cryptoData.forEach(coin => {
-          if (coin.sparkline_in_7d && coin.sparkline_in_7d.price) {
+        cryptoData.forEach((coin) => {
+          if (coin.sparkline_in_7d?.price) {
             charts[coin.id] = coin.sparkline_in_7d.price.map((price, index) => ({
               time: index,
-              price: price
+              price,
             }));
           }
         });
         setChartData(charts);
-        
+
         const globalChartData = Array.from({ length: 24 }, (_, i) => ({
-          hour: `${i}:00`,
+          hour:   `${i}:00`,
           crypto: 2.3 + Math.sin(i / 3) * 0.2 + Math.random() * 0.1,
-          stocks: 95 + Math.cos(i / 4) * 3 + Math.random() * 2,
-          forex: 7.2 + Math.sin(i / 5) * 0.5 + Math.random() * 0.3
+          stocks: 95  + Math.cos(i / 4) * 3   + Math.random() * 2,
+          forex:  7.2 + Math.sin(i / 5) * 0.5 + Math.random() * 0.3,
         }));
         setGlobalChart(globalChartData);
-        
-        // Generate intraday chart
-        const intraday = generateIntradayData();
-        setIntradayChart(intraday);
-        
+
+        setIntradayChart(generateIntradayData());
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching market data:', error);
+        console.error("Error fetching market data:", error);
         setLoading(false);
       }
     };
 
     fetchMarketData();
-    const interval = setInterval(fetchMarketData, 60000);
+    const interval = setInterval(fetchMarketData, 60_000);
     return () => clearInterval(interval);
   }, []);
 
+  // -------------------------------------------------------------------------
+  // Formatters
+  // -------------------------------------------------------------------------
   const formatPrice = (price) => {
-    if (price >= 1) return `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (price >= 1)
+      return `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     return `$${price.toFixed(6)}`;
   };
 
@@ -150,55 +168,47 @@ function Home() {
 
   const formatMarketCap = (cap) => {
     if (cap >= 1e12) return `$${(cap / 1e12).toFixed(2)}T`;
-    if (cap >= 1e9) return `$${(cap / 1e9).toFixed(2)}B`;
-    if (cap >= 1e6) return `$${(cap / 1e6).toFixed(2)}M`;
+    if (cap >= 1e9)  return `$${(cap / 1e9).toFixed(2)}B`;
+    if (cap >= 1e6)  return `$${(cap / 1e6).toFixed(2)}M`;
     return `$${cap.toLocaleString()}`;
   };
 
-  const stats = globalStats ? [
-    { 
-      label: "Crypto Market Cap", 
-      value: formatMarketCap(globalStats.total_market_cap?.usd || 0), 
-      change: "+12.5%" 
-    },
-    { 
-      label: "24h Volume", 
-      value: formatVolume(globalStats.total_volume?.usd || 0), 
-      change: "+8.2%" 
-    },
-    { 
-      label: "Active Markets", 
-      value: globalStats.active_cryptocurrencies?.toLocaleString() || "20K+", 
-      change: "+15" 
-    },
-    { 
-      label: "BTC Dominance", 
-      value: `${globalStats.market_cap_percentage?.btc?.toFixed(1) || "0"}%`, 
-      change: "+2.1%" 
-    }
-  ] : [
-    { label: "24h Volume", value: "$2.4B", change: "+12.5%" },
-    { label: "Active Traders", value: "500K+", change: "+8.2%" },
-    { label: "Markets", value: "350+", change: "+15" },
-    { label: "Avg. Speed", value: "8ms", change: "-2ms" }
-  ];
+  // -------------------------------------------------------------------------
+  // Stats
+  // -------------------------------------------------------------------------
+  const stats = globalStats
+    ? [
+        { label: "Crypto Market Cap", value: formatMarketCap(globalStats.total_market_cap?.usd || 0), change: "+12.5%" },
+        { label: "24h Volume",        value: formatVolume(globalStats.total_volume?.usd || 0),         change: "+8.2%"  },
+        { label: "Active Markets",    value: globalStats.active_cryptocurrencies?.toLocaleString() || "20K+", change: "+15" },
+        { label: "BTC Dominance",     value: `${globalStats.market_cap_percentage?.btc?.toFixed(1) || "0"}%`, change: "+2.1%" },
+      ]
+    : [
+        { label: "24h Volume",     value: "$2.4B", change: "+12.5%" },
+        { label: "Active Traders", value: "500K+", change: "+8.2%"  },
+        { label: "Markets",        value: "350+",  change: "+15"    },
+        { label: "Avg. Speed",     value: "8ms",   change: "-2ms"   },
+      ];
 
   const features = [
-    { title: "Advanced Order Types", desc: "Market, limit, stop-loss, trailing stop, and iceberg orders with millisecond execution", icon: "⚙️", tag: "TRADING" },
-    { title: "Margin Trading", desc: "Up to 100x leverage on selected pairs with isolated and cross margin modes", icon: "📈", tag: "LEVERAGE" },
-    { title: "Algorithmic Trading", desc: "RESTful & WebSocket APIs, FIX protocol, and co-location services for HFT", icon: "🤖", tag: "API" },
-    { title: "Institutional Grade", desc: "Cold storage, multi-sig wallets, insurance fund, and SOC 2 Type II certified", icon: "🔒", tag: "SECURITY" },
-    { title: "Advanced Analytics", desc: "TradingView charts, order flow analysis, market depth visualization, heatmaps", icon: "📊", tag: "ANALYSIS" },
-    { title: "Global Liquidity", desc: "Aggregated order books from 50+ exchanges for best execution prices", icon: "🌐", tag: "LIQUIDITY" }
+    { title: "Advanced Order Types",  desc: "Market, limit, stop-loss, trailing stop, and iceberg orders with millisecond execution", icon: "⚙️", tag: "TRADING"   },
+    { title: "Margin Trading",        desc: "Up to 100x leverage on selected pairs with isolated and cross margin modes",              icon: "📈", tag: "LEVERAGE"  },
+    { title: "Algorithmic Trading",   desc: "RESTful & WebSocket APIs, FIX protocol, and co-location services for HFT",               icon: "🤖", tag: "API"       },
+    { title: "Institutional Grade",   desc: "Cold storage, multi-sig wallets, insurance fund, and SOC 2 Type II certified",           icon: "🔒", tag: "SECURITY"  },
+    { title: "Advanced Analytics",    desc: "TradingView charts, order flow analysis, market depth visualization, heatmaps",          icon: "📊", tag: "ANALYSIS"  },
+    { title: "Global Liquidity",      desc: "Aggregated order books from 50+ exchanges for best execution prices",                    icon: "🌐", tag: "LIQUIDITY" },
   ];
 
   const platforms = [
     { name: "Web Terminal", desc: "Full-featured browser-based platform", icon: "💻" },
-    { name: "Desktop Pro", desc: "Windows, macOS, Linux applications", icon: "🖥️" },
-    { name: "Mobile Apps", desc: "iOS & Android with biometric auth", icon: "📱" },
-    { name: "API Suite", desc: "REST, WebSocket, FIX protocols", icon: "⚡" }
+    { name: "Desktop Pro",  desc: "Windows, macOS, Linux applications",   icon: "🖥️" },
+    { name: "Mobile Apps",  desc: "iOS & Android with biometric auth",     icon: "📱" },
+    { name: "API Suite",    desc: "REST, WebSocket, FIX protocols",        icon: "⚡" },
   ];
 
+  // -------------------------------------------------------------------------
+  // Tooltip components
+  // -------------------------------------------------------------------------
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
@@ -215,50 +225,68 @@ function Home() {
       return (
         <div className="intraday-tooltip">
           <p className="tooltip-time">{payload[0].payload.time}</p>
-          <p className="tooltip-price">${payload[0].value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p className="tooltip-price">
+            ${payload[0].value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
         </div>
       );
     }
     return null;
   };
 
+  // FIX: guard payload length >= 3 before accessing payload[1] and payload[2]
+  // Previously would throw if the chart rendered fewer than 3 data lines
   const GlobalMarketTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
+    if (active && payload && payload.length >= 3) {
       return (
         <div className="global-tooltip">
           <p className="tooltip-time">{payload[0].payload.hour}</p>
           <p className="tooltip-crypto">Crypto: ${payload[0].value.toFixed(2)}T</p>
           <p className="tooltip-stocks">Stocks: ${payload[1].value.toFixed(2)}T</p>
-          <p className="tooltip-forex">Forex: ${payload[2].value.toFixed(2)}T</p>
+          <p className="tooltip-forex">Forex:  ${payload[2].value.toFixed(2)}T</p>
         </div>
       );
     }
     return null;
   };
 
-  const currentPrice = intradayChart.length > 0 ? intradayChart[intradayChart.length - 1].price : 25232.50;
-  const openPrice = intradayChart.length > 0 ? intradayChart[0].price : 25550.00;
-  const priceChange = currentPrice - openPrice;
+  // -------------------------------------------------------------------------
+  // Derived price values
+  // -------------------------------------------------------------------------
+  const currentPrice       = intradayChart.length > 0 ? intradayChart[intradayChart.length - 1].price : 25232.50;
+  const openPrice          = intradayChart.length > 0 ? intradayChart[0].price : 25550.00;
+  const priceChange        = currentPrice - openPrice;
   const priceChangePercent = ((priceChange / openPrice) * 100).toFixed(2);
 
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
   return (
     <div className="home-container">
       {/* Animated Background Grid */}
       <div className="grid-background"></div>
-      
-      {/* Floating Particles */}
+
+      {/* Floating Particles — stable positions via useMemo */}
       <div className="particles">
-        {[...Array(20)].map((_, i) => (
-          <div key={i} className="particle" style={{
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 5}s`,
-            animationDuration: `${15 + Math.random() * 10}s`
-          }}></div>
+        {particles.map(({ id, left, animDelay, animDur }) => (
+          <div
+            key={id}
+            className="particle"
+            style={{
+              left,
+              animationDelay:    animDelay,
+              animationDuration: animDur,
+            }}
+          />
         ))}
       </div>
 
       {/* Hero Section */}
-      <div className="hero-section" ref={heroRef} style={{ transform: `translateY(${scrollY * 0.5}px)` }}>
+      <div
+        className="hero-section"
+        ref={heroRef}
+        style={{ transform: `translateY(${scrollY * 0.5}px)` }}
+      >
         <div className="hero-content">
           <div className="hero-badge animate-in">
             <span className="badge-pulse"></span>
@@ -269,11 +297,14 @@ function Home() {
             Execute With <span className="gradient-text-alt">Speed</span>.
           </h1>
           <p className="hero-subtitle animate-in delay-2">
-            Professional trading infrastructure trusted by institutions and retail traders worldwide. 
+            Professional trading infrastructure trusted by institutions and retail traders worldwide.
             Sub-10ms execution, 350+ markets, and institutional-grade security.
           </p>
           <div className="hero-buttons animate-in delay-3">
-            <button className="btn-primary glow-effect">
+            <button
+              className="btn-primary glow-effect"
+              onClick={() => navigate("/login", { state: { mode: "register" } })}
+            >
               <span>Open Account</span>
               <span className="btn-arrow">→</span>
             </button>
@@ -283,11 +314,15 @@ function Home() {
           </div>
           <div className="hero-stats animate-in delay-4">
             {stats.map((stat, idx) => (
-              <div key={idx} className="hero-stat-item" style={{ animationDelay: `${0.8 + idx * 0.1}s` }}>
+              <div
+                key={idx}
+                className="hero-stat-item"
+                style={{ animationDelay: `${0.8 + idx * 0.1}s` }}
+              >
                 <div className="stat-glow"></div>
                 <div className="hero-stat-value">{stat.value}</div>
                 <div className="hero-stat-label">{stat.label}</div>
-                <div className={`hero-stat-change ${stat.change.startsWith('+') ? 'positive' : 'negative'}`}>
+                <div className={`hero-stat-change ${stat.change.startsWith("+") ? "positive" : "negative"}`}>
                   {stat.change}
                 </div>
               </div>
@@ -303,8 +338,9 @@ function Home() {
             <div key={idx} className="ticker-item">
               <span className="ticker-symbol">{coin.symbol?.toUpperCase()}</span>
               <span className="ticker-price">{formatPrice(coin.current_price)}</span>
-              <span className={`ticker-change ${coin.price_change_percentage_24h >= 0 ? 'positive' : 'negative'}`}>
-                {coin.price_change_percentage_24h >= 0 ? '+' : ''}{coin.price_change_percentage_24h?.toFixed(2)}%
+              <span className={`ticker-change ${coin.price_change_percentage_24h >= 0 ? "positive" : "negative"}`}>
+                {coin.price_change_percentage_24h >= 0 ? "+" : ""}
+                {coin.price_change_percentage_24h?.toFixed(2)}%
               </span>
             </div>
           ))}
@@ -325,17 +361,19 @@ function Home() {
             <div className="chart-info">
               <h3 className="chart-title">S&P 500 Index</h3>
               <div className="price-info">
-                <span className="current-price">{currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                <span className={`price-change ${priceChange >= 0 ? 'positive' : 'negative'}`}>
-                  {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)} ({priceChangePercent}%)
+                <span className="current-price">
+                  {currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+                <span className={`price-change ${priceChange >= 0 ? "positive" : "negative"}`}>
+                  {priceChange >= 0 ? "+" : ""}{priceChange.toFixed(2)} ({priceChangePercent}%)
                 </span>
               </div>
             </div>
             <div className="time-range-selector">
-              {['1D', '1M', '3M', '1Y', '5Y', 'All'].map(range => (
-                <button 
+              {["1D", "1M", "3M", "1Y", "5Y", "All"].map((range) => (
+                <button
                   key={range}
-                  className={`range-btn ${timeRange === range ? 'active' : ''}`}
+                  className={`range-btn ${timeRange === range ? "active" : ""}`}
                   onClick={() => setTimeRange(range)}
                 >
                   {range}
@@ -348,25 +386,22 @@ function Home() {
               <AreaChart data={intradayChart} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="intradayGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={priceChange >= 0 ? "#00ff88" : "#ff3366"} stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor={priceChange >= 0 ? "#00ff88" : "#ff3366"} stopOpacity={0}/>
+                    <stop offset="5%"  stopColor={priceChange >= 0 ? "#00ff88" : "#ff3366"} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={priceChange >= 0 ? "#00ff88" : "#ff3366"} stopOpacity={0}   />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis 
-                  dataKey="time" 
+                <XAxis
+                  dataKey="time"
                   stroke="#484f58"
-                  style={{ fontSize: '0.85rem', fontFamily: 'Space Mono, monospace' }}
+                  style={{ fontSize: "0.85rem", fontFamily: "Space Mono, monospace" }}
                   interval="preserveStartEnd"
-                  tickFormatter={(value, index) => {
-                    if (index % 24 === 0) return value;
-                    return '';
-                  }}
+                  tickFormatter={(value, index) => (index % 24 === 0 ? value : "")}
                 />
-                <YAxis 
+                <YAxis
                   stroke="#484f58"
-                  style={{ fontSize: '0.85rem', fontFamily: 'Space Mono, monospace' }}
-                  domain={['dataMin - 50', 'dataMax + 50']}
+                  style={{ fontSize: "0.85rem", fontFamily: "Space Mono, monospace" }}
+                  domain={["dataMin - 50", "dataMax + 50"]}
                   tickFormatter={(value) => value.toLocaleString()}
                 />
                 <Tooltip content={<IntradayTooltip />} />
@@ -420,25 +455,25 @@ function Home() {
               <LineChart data={globalChart}>
                 <defs>
                   <linearGradient id="cryptoGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00ff88" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#00ff88" stopOpacity={0}/>
+                    <stop offset="5%"  stopColor="#00ff88" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#00ff88" stopOpacity={0}   />
                   </linearGradient>
                   <linearGradient id="stocksGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#00d4ff" stopOpacity={0}/>
+                    <stop offset="5%"  stopColor="#00d4ff" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#00d4ff" stopOpacity={0}   />
                   </linearGradient>
                   <linearGradient id="forexGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ffa500" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#ffa500" stopOpacity={0}/>
+                    <stop offset="5%"  stopColor="#ffa500" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#ffa500" stopOpacity={0}   />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="hour" stroke="#484f58" style={{ fontSize: '0.85rem' }} />
-                <YAxis stroke="#484f58" style={{ fontSize: '0.85rem' }} />
+                <XAxis dataKey="hour" stroke="#484f58" style={{ fontSize: "0.85rem" }} />
+                <YAxis stroke="#484f58" style={{ fontSize: "0.85rem" }} />
                 <Tooltip content={<GlobalMarketTooltip />} />
                 <Line type="monotone" dataKey="crypto" stroke="#00ff88" strokeWidth={3} dot={false} />
                 <Line type="monotone" dataKey="stocks" stroke="#00d4ff" strokeWidth={3} dot={false} />
-                <Line type="monotone" dataKey="forex" stroke="#ffa500" strokeWidth={3} dot={false} />
+                <Line type="monotone" dataKey="forex"  stroke="#ffa500" strokeWidth={3} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -461,9 +496,9 @@ function Home() {
             </div>
           ) : (
             marketData.map((coin, idx) => (
-              <div 
-                key={idx} 
-                className={`market-card hover-lift ${activeCard === `crypto-${idx}` ? 'active' : ''}`}
+              <div
+                key={idx}
+                className={`market-card hover-lift ${activeCard === `crypto-${idx}` ? "active" : ""}`}
                 onMouseEnter={() => setActiveCard(`crypto-${idx}`)}
                 onMouseLeave={() => setActiveCard(null)}
                 style={{ animationDelay: `${idx * 0.1}s` }}
@@ -471,11 +506,14 @@ function Home() {
                 <div className="card-shine"></div>
                 <div className="market-header">
                   <div className="market-pair-container">
-                    {coin.image && <img src={coin.image} alt={coin.name} className="coin-icon spin-on-hover" />}
+                    {coin.image && (
+                      <img src={coin.image} alt={coin.name} className="coin-icon spin-on-hover" />
+                    )}
                     <span className="market-pair">{coin.symbol.toUpperCase()}/USDT</span>
                   </div>
-                  <span className={`market-change ${coin.price_change_percentage_24h >= 0 ? 'positive' : 'negative'}`}>
-                    {coin.price_change_percentage_24h >= 0 ? '+' : ''}{coin.price_change_percentage_24h.toFixed(2)}%
+                  <span className={`market-change ${coin.price_change_percentage_24h >= 0 ? "positive" : "negative"}`}>
+                    {coin.price_change_percentage_24h >= 0 ? "+" : ""}
+                    {coin.price_change_percentage_24h.toFixed(2)}%
                   </span>
                 </div>
                 <div className="market-price">{formatPrice(coin.current_price)}</div>
@@ -486,12 +524,27 @@ function Home() {
                       <AreaChart data={chartData[coin.id]}>
                         <defs>
                           <linearGradient id={`gradient-${coin.id}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={coin.price_change_percentage_24h >= 0 ? "#00ff88" : "#ff3366"} stopOpacity={0.3} />
-                            <stop offset="95%" stopColor={coin.price_change_percentage_24h >= 0 ? "#00ff88" : "#ff3366"} stopOpacity={0} />
+                            <stop
+                              offset="5%"
+                              stopColor={coin.price_change_percentage_24h >= 0 ? "#00ff88" : "#ff3366"}
+                              stopOpacity={0.3}
+                            />
+                            <stop
+                              offset="95%"
+                              stopColor={coin.price_change_percentage_24h >= 0 ? "#00ff88" : "#ff3366"}
+                              stopOpacity={0}
+                            />
                           </linearGradient>
                         </defs>
                         <Tooltip content={<CustomTooltip />} />
-                        <Area type="monotone" dataKey="price" stroke={coin.price_change_percentage_24h >= 0 ? "#00ff88" : "#ff3366"} strokeWidth={2} fill={`url(#gradient-${coin.id})`} dot={false} />
+                        <Area
+                          type="monotone"
+                          dataKey="price"
+                          stroke={coin.price_change_percentage_24h >= 0 ? "#00ff88" : "#ff3366"}
+                          strokeWidth={2}
+                          fill={`url(#gradient-${coin.id})`}
+                          dot={false}
+                        />
                       </AreaChart>
                     </ResponsiveContainer>
                   )}
@@ -510,8 +563,8 @@ function Home() {
         </div>
         <div className="markets-grid">
           {stockIndices.map((stock, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className="market-card hover-lift"
               style={{ animationDelay: `${idx * 0.1}s` }}
             >
@@ -521,7 +574,7 @@ function Home() {
                   <span className="stock-symbol">{stock.symbol}</span>
                   <span className="market-pair">{stock.name}</span>
                 </div>
-                <span className={`market-change ${stock.up ? 'positive' : 'negative'}`}>
+                <span className={`market-change ${stock.up ? "positive" : "negative"}`}>
                   {stock.change}%
                 </span>
               </div>
@@ -540,16 +593,16 @@ function Home() {
         </div>
         <div className="markets-grid">
           {forexData.map((forex, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className="market-card hover-lift"
               style={{ animationDelay: `${idx * 0.1}s` }}
             >
               <div className="card-shine"></div>
               <div className="market-header">
                 <span className="market-pair">{forex.pair}</span>
-                <span className={`market-change ${parseFloat(forex.change) >= 0 ? 'positive' : 'negative'}`}>
-                  {parseFloat(forex.change) >= 0 ? '+' : ''}{forex.change}%
+                <span className={`market-change ${parseFloat(forex.change) >= 0 ? "positive" : "negative"}`}>
+                  {parseFloat(forex.change) >= 0 ? "+" : ""}{forex.change}%
                 </span>
               </div>
               <div className="market-price">{forex.rate.toFixed(4)}</div>
@@ -564,12 +617,14 @@ function Home() {
         <div className="section-header-center">
           <span className="section-label pulse-label">POWERFUL FEATURES</span>
           <h2 className="section-title-large">Built For Professional Traders</h2>
-          <p className="section-subtitle">Industry-leading tools and technology designed for serious trading</p>
+          <p className="section-subtitle">
+            Industry-leading tools and technology designed for serious trading
+          </p>
         </div>
         <div className="features-grid">
           {features.map((feature, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className="feature-card hover-lift"
               style={{ animationDelay: `${idx * 0.1}s` }}
             >
@@ -591,8 +646,8 @@ function Home() {
         </div>
         <div className="platforms-grid">
           {platforms.map((platform, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className="platform-card hover-lift"
               style={{ animationDelay: `${idx * 0.1}s` }}
             >
@@ -614,22 +669,19 @@ function Home() {
             Join 500,000+ traders who choose us for professional-grade trading infrastructure
           </p>
           <div className="cta-buttons">
-            <button className="btn-cta-primary glow-effect">
+            <button
+              className="btn-cta-primary glow-effect"
+              onClick={() => navigate("/login", { state: { mode: "register" } })}
+            >
               Create Account
               <span className="btn-arrow">→</span>
             </button>
             <button className="btn-cta-secondary glass-effect">Schedule Demo</button>
           </div>
           <div className="cta-features">
-            <div className="cta-feature-item">
-              <span className="cta-check">✓</span> No hidden fees
-            </div>
-            <div className="cta-feature-item">
-              <span className="cta-check">✓</span> 24/7 support
-            </div>
-            <div className="cta-feature-item">
-              <span className="cta-check">✓</span> Instant deposits
-            </div>
+            <div className="cta-feature-item"><span className="cta-check">✓</span> No hidden fees</div>
+            <div className="cta-feature-item"><span className="cta-check">✓</span> 24/7 support</div>
+            <div className="cta-feature-item"><span className="cta-check">✓</span> Instant deposits</div>
           </div>
         </div>
       </div>
