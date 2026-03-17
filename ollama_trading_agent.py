@@ -6,7 +6,8 @@ from ta.trend import SMAIndicator
 
 """
 AI Trading Agent — Future Prediction Mode
-Uses latest live market data + Ollama LLM to predict upcoming BUY/SELL/HOLD signals
+Integrates Research Agents (News, Sentiment, Bull vs Bear Debate) with Technical Analysis
+Uses consensus from multi-agent framework to predict upcoming BUY/SELL/HOLD signals
 """
 
 import json
@@ -17,7 +18,21 @@ from ta.trend import SMAIndicator, EMAIndicator, MACD
 from ta.momentum import RSIIndicator
 from ta.volatility import BollingerBands
 import warnings
+import sys
+import os
+
 warnings.filterwarnings("ignore")
+
+# Import TradingAgents modules
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'TradingAgents'))
+
+try:
+    from data_collector import DataCollector
+    from debate_engine import DebateEngine
+    RESEARCH_AGENTS_AVAILABLE = True
+except ImportError as e:
+    print(f"[OllamaAgent] Warning: Could not import TradingAgents modules: {e}")
+    RESEARCH_AGENTS_AVAILABLE = False
 
 # ─────────────────────────────────────────────
 # CONFIG
@@ -100,8 +115,9 @@ def next_trading_days(n: int) -> list[str]:
 # PREDICTION AGENT
 # ─────────────────────────────────────────────
 class FuturePredictionAgent:
-    def __init__(self, ticker: str):
+    def __init__(self, ticker: str, debate_output: dict = None):
         self.ticker = ticker
+        self.debate_output = debate_output  # Output from Bull vs Bear debate
 
     # ── Fetch latest 3 months of data for indicators ──
     def fetch_latest_data(self):
@@ -163,11 +179,29 @@ class FuturePredictionAgent:
             f"Recommendation : {sig['recommended_action']}\n"
             f"Reason         : {sig['deciding_factor']}"
         )
+        
+        # Add research agents consensus if available
+        research_consensus = ""
+        if self.debate_output:
+            decision = self.debate_output.get('decision', {})
+            research_consensus = f"""
+RESEARCH AGENTS CONSENSUS (from Multi-Agent Debate):
+Debate Winner       : {decision.get('winner', 'N/A')}
+Recommended Action  : {decision.get('recommended_action', 'N/A')}
+Debate Confidence   : {decision.get('confidence', 'N/A')}/10
+Key Factor          : {decision.get('deciding_factor', 'N/A')}
+
+This consensus incorporates:
+- Bull vs Bear debate on fundamentals
+- News sentiment from recent market events
+- Social sentiment from Reddit/StockTwits
+- Technical indicator alignment
+"""
 
         prompt = f"""
 You are a professional stock market analyst specializing in short-term price prediction.
 
-Today is {today}. Based on the CURRENT live market data below, predict what action 
+Today is {today}. Based on the CURRENT live market data and research agent consensus below, predict what action 
 a trader should take on {predict_date} (Day {day_num} ahead).
 
 Ticker: {self.ticker}
@@ -183,10 +217,11 @@ Current Technical Indicators (as of today {today}):
 
 External Market Sentiment:
 {signal_block}
+{research_consensus}
 
 Based on all of the above, predict for {predict_date}:
 - If trend continues, should a trader BUY, SELL, or HOLD?
-- Consider momentum, RSI extremes, MACD direction, and the bearish external signal.
+- Consider momentum, RSI extremes, MACD direction, research consensus, and the bearish external signal.
 
 Respond ONLY with valid JSON:
 {{"action": "BUY" | "SELL" | "HOLD", "reason": "one-line prediction reason", "confidence": <1-10>}}
@@ -203,6 +238,14 @@ Respond ONLY with valid JSON:
 
         sig = EXTERNAL_SIGNAL
         days_str = ", ".join(days)
+        
+        research_context = ""
+        if self.debate_output:
+            decision = self.debate_output.get('decision', {})
+            research_context = f"""
+RESEARCH AGENTS CONSENSUS:
+- Research decision: {decision.get('recommended_action', 'N/A')} (confidence {decision.get('confidence', 'N/A')}/10)
+- Winning argument: {decision.get('winner', 'N/A')} case"""
 
         prompt = f"""
 You are a professional stock market analyst. Today is {today}.
@@ -212,21 +255,21 @@ Given the current state of {self.ticker}:
 - SMA20 : {sma20:.2f} ({"above" if price > sma20 else "below"})
 - RSI   : {rsi:.2f} ({"overbought" if rsi > 70 else "oversold" if rsi < 30 else "neutral"})
 - MACD  : {"bullish" if macd > macd_sig else "bearish"} crossover
-- External Signal: {sig['winner']} with confidence {sig['confidence']}/10 → {sig['recommended_action']}
+- External Signal: {sig['winner']} with confidence {sig['confidence']}/10 → {sig['recommended_action']}{research_context}
 
 Provide a short-term outlook for the next {len(days)} trading days: {days_str}
 
 Give your overall outlook: Is this stock likely to go UP, DOWN, or SIDEWAYS?
 What is the best strategy — accumulate, reduce exposure, or wait?
 
-Respond in 3-4 sentences maximum. Be direct and specific.
-"""
+Respond in 3-4 sentences maximum. Be direct and specific."""
         return prompt
 
     # ── Main Run ──────────────────────────────
     def run(self):
         print(f"\n{'═'*65}")
         print(f"  🔮  {self.ticker} — FUTURE PREDICTION MODE")
+        print(f"  Powered by Multi-Agent Research Framework")
         print(f"{'═'*65}")
 
         # Step 1: Fetch & compute
@@ -246,7 +289,7 @@ Respond in 3-4 sentences maximum. Be direct and specific.
         bb_lower = float(row["BB_lower"])
 
         # Step 2: Print current snapshot
-        print(f"\n  📊 CURRENT SNAPSHOT  (latest data: {today_day}, {today})")
+        print(f"\n  📊 TECHNICAL SNAPSHOT  (latest data: {today_day}, {today})")
         print(f"  {'─'*55}")
         print(f"  Price       : {price:.2f}")
         print(f"  SMA20       : {sma20:.2f}  → {'📈 ABOVE (bullish)' if price > sma20 else '📉 BELOW (bearish)'}")
@@ -255,6 +298,16 @@ Respond in 3-4 sentences maximum. Be direct and specific.
         print(f"  MACD        : {macd:.4f}  → {'📈 Bullish' if macd > macd_sig else '📉 Bearish'}")
         print(f"  BB Upper    : {bb_upper:.2f}  |  BB Lower: {bb_lower:.2f}")
         print(f"\n  {self.price_trend_summary(df)}")
+        
+        # Step 2b: Display research agents consensus
+        if self.debate_output:
+            decision = self.debate_output.get('decision', {})
+            print(f"\n  🤖 RESEARCH AGENTS CONSENSUS")
+            print(f"  {'─'*55}")
+            print(f"  Debate Winner   : {decision.get('winner', 'N/A')} (confidence {decision.get('confidence', 'N/A')}/10)")
+            print(f"  Recommendation  : {decision.get('recommended_action', 'N/A')}")
+            print(f"  Key Factor      : {decision.get('deciding_factor', 'N/A')[:60]}...")
+
         print(f"\n  📡 External Signal  : {EXTERNAL_SIGNAL['winner']} "
               f"(confidence {EXTERNAL_SIGNAL['confidence']}/10) "
               f"→ {EXTERNAL_SIGNAL['recommended_action']}")
@@ -320,13 +373,67 @@ Respond in 3-4 sentences maximum. Be direct and specific.
         sells = sum(1 for r in results if r["action"] == "SELL")
         holds = sum(1 for r in results if r["action"] == "HOLD")
         dominant = max([("BUY", buys), ("SELL", sells), ("HOLD", holds)], key=lambda x: x[1])
-        print(f"  📋 PREDICTION SUMMARY")
+        print(f"  📋 SHORT-TERM PREDICTION SUMMARY")
         print(f"  BUY signals  : {buys} day(s)")
         print(f"  SELL signals : {sells} day(s)")
         print(f"  HOLD signals : {holds} day(s)")
         print(f"  Dominant     : {dominant[0]} ({dominant[1]}/{PREDICT_DAYS} days)")
+        
+        # Step 6: COMPREHENSIVE FINAL SUMMARY
+        print(f"\n  {'═'*65}")
+        print(f"  📊 COMPREHENSIVE ANALYSIS SUMMARY")
+        print(f"  {'═'*65}")
+        
+        # Align predictions with research consensus
+        research_recommendation = "NEUTRAL"
+        research_confidence = 0
+        if self.debate_output:
+            decision = self.debate_output.get('decision', {})
+            research_recommendation = decision.get('recommended_action', 'NEUTRAL')
+            research_confidence = decision.get('confidence', 0)
+        
+        # Generate alignment assessment
+        alignment = "✓ ALIGNED" if dominant[0] == research_recommendation else "⚠ DIVERGENT"
+        
+        print(f"\n  Research Agents Consensus:")
+        print(f"    → Recommendation: {research_recommendation}")
+        print(f"    → Confidence: {research_confidence}/10")
+        
+        print(f"\n  Technical Predictions:")
+        print(f"    → Dominant Signal: {dominant[0]}")
+        print(f"    → Frequency: {dominant[1]}/{PREDICT_DAYS} trading days")
+        
+        print(f"\n  Alignment: {alignment}")
+        
+        if dominant[0] == research_recommendation:
+            print(f"\n  ✅ STRONG CONSENSUS: Both research agents and technical")
+            print(f"     analysis agree on {dominant[0]} recommendation.")
+            print(f"     Proceed with {research_recommendation} strategy.")
+        else:
+            print(f"\n  ⚠️  DIVERGENCE DETECTED: Research agents suggest {research_recommendation}")
+            print(f"     while technical predictions lean toward {dominant[0]}.")
+            print(f"     This discord suggests elevated volatility or market shift.")
+        
+        print(f"\n  Key Insights:")
+        if research_confidence >= 8:
+            print(f"    → Research confidence is HIGH - strongly consider the consensus")
+        elif research_confidence < 5:
+            print(f"    → Research consensus is WEAK - rely more on technical signals")
+        
+        if buys > 0 and sells > 0:
+            print(f"    → Mixed signals detected - exercise caution in position sizing")
+        elif dominant[0] == "HOLD":
+            print(f"    → Market appears indecisive - wait for clearer direction")
+        
+        print(f"\n  Overall Strategy:")
+        if alignment == "✓ ALIGNED" and research_confidence >= 7:
+            print(f"    🚀 STRONG {dominant[0]} - Execute with confidence")
+        elif alignment == "✓ ALIGNED":
+            print(f"    ↗️  Moderate {dominant[0]} - Proceed with measured position")
+        else:
+            print(f"    🛑 CAUTION - Wait for divergence to resolve before major moves")
+        
         print(f"{'═'*65}\n")
-
         print("  ⚠️  Disclaimer: AI predictions are not financial advice.")
         print("      Always do your own research before trading.\n")
 
@@ -335,7 +442,44 @@ Respond in 3-4 sentences maximum. Be direct and specific.
 # ENTRY POINT
 # ─────────────────────────────────────────────
 if __name__ == "__main__":
+    ticker = "INFY.NS"   # Change to any ticker e.g. TCS.NS, RELIANCE.NS, AAPL
+    
+    print("\n" + "="*70)
+    print("INTEGRATED AI TRADING FRAMEWORK")
+    print("="*70)
+    print("\nPhase 1: Running Research Agents (News, Sentiment, Bull vs Bear Debate)")
+    print("-"*70)
+    
+    debate_output = None
+    
+    # Run research agents if available
+    if RESEARCH_AGENTS_AVAILABLE:
+        try:
+            print(f"\n[Main] Initializing research agents for {ticker}...")
+            collector = DataCollector(ticker)
+            research_input = collector.get_research_input()
+            
+            print(f"\n[Main] Running debate engine...")
+            engine = DebateEngine(model_name="llama3.2", rounds=2)
+            debate_output = engine.run(research_input, verbose=False)
+            
+            print(f"\n[Main] ✅ Research agents complete!")
+            print(f"       Winner: {debate_output['decision'].get('winner')}")
+            print(f"       Action: {debate_output['decision'].get('recommended_action')}")
+            
+        except Exception as e:
+            print(f"\n[Main] ⚠️  Error running research agents: {e}")
+            print(f"       Proceeding with technical analysis only...")
+    else:
+        print(f"\n[Main] ⚠️  Research agents not available")
+        print(f"       Proceeding with technical analysis only...")
+    
+    print("\n" + "="*70)
+    print("Phase 2: Running Technical Analysis & Future Predictions")
+    print("="*70)
+    
     agent = FuturePredictionAgent(
-        ticker = "INFY.NS"   # Change to any ticker e.g. TCS.NS, RELIANCE.NS, AAPL
+        ticker=ticker,
+        debate_output=debate_output
     )
     agent.run()

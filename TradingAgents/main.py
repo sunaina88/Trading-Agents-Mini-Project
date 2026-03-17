@@ -19,7 +19,30 @@ def main():
     collector = DataCollector(TICKER)
     research_input = collector.get_research_input()
 
-    print(f"\nMarket Data for {research_input.company_name} ({research_input.ticker})")
+    # Display sentiment and news analysis results
+    print("\n" + "="*60)
+    print("SENTIMENT & NEWS ANALYSIS RESULTS")
+    print("="*60)
+    
+    if collector.news_report:
+        print(f"\n📰 NEWS ANALYSIS:")
+        print(f"  Overall Sentiment: {collector.news_report.get('overall_sentiment', 'N/A')}")
+        print(f"  News Score: {collector.news_report.get('overall_news_score', 'N/A')}/10")
+        print(f"  Events Found: {len(collector.news_report.get('events', []))}")
+        print(f"  Contradictions: {collector.news_report.get('contradictions_detected', False)}")
+        if collector.news_report.get('summary'):
+            print(f"  Summary: {collector.news_report['summary']}")
+    
+    if collector.sentiment_report:
+        print(f"\n💬 SENTIMENT ANALYSIS:")
+        print(f"  Overall Sentiment: {collector.sentiment_report.get('overall_sentiment', 'N/A')}")
+        print(f"  Sentiment Score: {collector.sentiment_report.get('sentiment_score', 'N/A')}")
+        print(f"  Posts Analyzed: {collector.sentiment_report.get('posts_analyzed', 0)}")
+        print(f"  Sources: {collector.sentiment_report.get('sources', {})}")
+        print(f"  Confidence: {collector.sentiment_report.get('confidence', 'N/A')}")
+
+    print("\n" + "="*60)
+    print(f"Market Data for {research_input.company_name} ({research_input.ticker})")
     print(research_input.to_readable_string())
     print("=" * 60)
 

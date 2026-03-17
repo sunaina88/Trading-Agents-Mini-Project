@@ -32,7 +32,7 @@ class HistoricalContext:
 class ResearchInput:
     """
     Container for all data the researcher agents receive.
-    Now includes historical context!
+    Now includes historical context + RandomForest ML predictions!
     """
     # Technical indicators
     rsi: float
@@ -49,6 +49,9 @@ class ResearchInput:
     market_trend: str  # 'bullish', 'bearish', or 'sideways'
     sector_performance: str  # 'strong', 'weak', or 'neutral'
 
+    # ML-based prediction (RandomForest)
+    rf_prediction: Optional[dict] = None  # {'prediction': 'UP'/'DOWN', 'confidence': 0-1, ...}
+
     # Historical context
     historical: Optional[HistoricalContext] = None
 
@@ -57,7 +60,7 @@ class ResearchInput:
     company_name: Optional[str] = "Apple Inc."
 
     def to_readable_string(self) -> str:
-        """Format the data nicely for prompts with historical context."""
+        """Format the data nicely for prompts with historical context and ML predictions."""
         base_str = f"""
 TECHNICAL INDICATORS (from Technical Agent)
 
@@ -76,6 +79,18 @@ MARKET CONTEXT
 
 Market Trend:         {self.market_trend}
 Sector Performance:   {self.sector_performance}
+"""
+
+        # Add ML prediction if available
+        if self.rf_prediction:
+            base_str += f"""
+MACHINE LEARNING PREDICTION (RandomForest)
+
+Direction Prediction: {self.rf_prediction.get('prediction')}
+Confidence Level:     {self.rf_prediction.get('confidence')} (0-1 scale, higher = more certain)
+Probability UP:       {self.rf_prediction.get('probability_up')}
+Signal Strength:      {self.rf_prediction.get('signal_strength')} (STRONG/WEAK)
+Model Accuracy:       {self.rf_prediction.get('model_accuracy') * 100 if isinstance(self.rf_prediction.get('model_accuracy'), float) else self.rf_prediction.get('model_accuracy')}%
 """
 
         # Add historical context if available

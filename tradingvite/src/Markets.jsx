@@ -57,61 +57,7 @@ const MOCK = {
   ],
 };
 
-const AGENT_META = {
-  fundamentals:{label:"Fundamentals",icon:"📊",color:"#00bcd4"},
-  sentiment:   {label:"Sentiment",   icon:"💬",color:"#ab47bc"},
-  news:        {label:"News",        icon:"📰",color:"#42a5f5"},
-  technical:   {label:"Technical",   icon:"📈",color:"#26a69a"},
-  bullish:     {label:"Bull Case",   icon:"🐂",color:"#66bb6a"},
-  bearish:     {label:"Bear Case",   icon:"🐻",color:"#ef5350"},
-  risk:        {label:"Risk Mgmt",   icon:"🛡️",color:"#ffa726"},
-};
 
-// ── Claude AI Analysis via Anthropic API ─────────────────────────────────────
-async function fetchClaudeAnalysis(ticker, name, price, change, country) {
-  const prompt = `You are a professional multi-agent stock market analyst system. Analyze the stock "${name}" (ticker: ${ticker}, market: ${country}) with current price ${price} and today's change: ${change}%.
-
-Respond ONLY with a valid JSON object — no markdown, no backticks, no explanation outside the JSON. Use exactly this structure:
-
-{
-  "signal": "BUY",
-  "confidence": 72.4,
-  "decision": "Two to three sentence portfolio manager summary and action recommendation.",
-  "agents": {
-    "fundamentals": { "signal": "BUY", "score": 74.2, "summary": "Two to three sentence fundamental analysis." },
-    "sentiment":    { "signal": "HOLD","score": 61.0, "summary": "Two to three sentence sentiment analysis." },
-    "news":         { "signal": "BUY", "score": 68.5, "summary": "Two to three sentence news-based analysis." },
-    "technical":    { "signal": "SELL","score": 55.1, "summary": "Two to three sentence technical analysis with indicators." },
-    "bullish":      { "score": 78.0, "summary": "Two to three sentence bull case." },
-    "bearish":      { "score": 42.0, "summary": "Two to three sentence bear case." },
-    "risk":         { "level": "MEDIUM", "summary": "Two to three sentence risk management note." }
-  }
-}
-
-Rules:
-- signal must be "BUY", "SELL", or "HOLD"
-- confidence is a float between 55.0 and 94.0
-- agent scores are floats between 30.0 and 95.0
-- risk level must be "LOW", "MEDIUM", or "HIGH"
-- base analysis on your real knowledge of ${name} — be specific and realistic
-- let the ${change}% daily change influence technical and sentiment signals`;
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-
-  if (!response.ok) throw new Error(`API ${response.status}`);
-  const data = await response.json();
-  const raw = data.content.map(b => b.text || "").join("");
-  const clean = raw.replace(/```json|```/gi, "").trim();
-  return JSON.parse(clean);
-}
 
 // ── TradingView Widget ────────────────────────────────────────────────────────
 function TVChart({ symbol }) {
@@ -134,94 +80,106 @@ function TVChart({ symbol }) {
   return <div ref={ref} style={{width:"100%",height:"100%"}} />;
 }
 
-// ── Sentiment Bar ─────────────────────────────────────────────────────────────
-function SentimentBar({ score }) {
-  const pct = Math.max(0, Math.min(100, score));
-  const zones = [
-    {label:"Strong Sell",color:"#c62828"},
-    {label:"Sell",       color:"#ef5350"},
-    {label:"Neutral",    color:"#ffa726"},
-    {label:"Buy",        color:"#66bb6a"},
-    {label:"Strong Buy", color:"#2e7d32"},
-  ];
-  const zoneIdx = Math.min(4, Math.floor(pct / 20));
-  const current = zones[zoneIdx];
-  const bars = Array.from({length:30},(_,i)=>{
-    const v = 40 + Math.sin(i*0.5)*15 + (score-50)*0.3 + (i%3)*3;
-    return Math.max(15,Math.min(95,v));
-  });
+// ── Technical Indicator Bar ────────────────────────────────────────────────────────
+// REMOVED - Keeping UI simple
 
+// ── Sentiment Display ────────────────────────────────────────────────────────
+// REMOVED - Keeping UI simple
+
+// ── Risk Factors Display ────────────────────────────────────────────────────────
+// REMOVED - Keeping UI simple
+
+// ── Researcher Arguments ────────────────────────────────────────────────────────
+// REMOVED - Keeping UI simple
+
+// ── Confidence Gauge Component ────────────────────────────────────────────────────────
+function ConfidenceGauge({ confidence, verdict }) {
+  const getColor = (conf) => {
+    if (conf >= 80) return "#22c55e"; // Green - Strong
+    if (conf >= 60) return "#84cc16"; // Lime - Good
+    if (conf >= 40) return "#eab308"; // Yellow - Moderate
+    if (conf >= 20) return "#f97316"; // Orange - Weak
+    return "#ef4444"; // Red - Very Weak
+  };
+  
+  const color = getColor(confidence);
+  const circumference = 2 * Math.PI * 50;
+  const strokeDashoffset = circumference - (confidence / 100) * circumference;
+  
+  const getVerdictColor = () => {
+    if (verdict === "BUY") return "#22c55e";
+    if (verdict === "SELL") return "#ef4444";
+    return "#f59e0b";
+  };
+  
   return (
-    <div className="sb-wrap">
-      <div className="sb-header">
-        <span className="sb-title">Market Sentiment</span>
-        <span className="sb-current" style={{color:current.color}}>{current.label}</span>
-      </div>
-      <div className="sb-track">
-        {zones.map(z=>(
-          <div key={z.label} className="sb-zone" style={{background:z.color}}/>
-        ))}
-        <div className="sb-needle" style={{left:`${pct}%`}}>
-          <div className="sb-nl" style={{background:current.color}}/>
-          <div className="sb-nd" style={{background:current.color}}/>
-          <span className="sb-nv" style={{color:current.color}}>{Math.round(pct)}</span>
-        </div>
-      </div>
-      <div className="sb-zone-labels">
-        {zones.map(z=>(<span key={z.label} style={{color:z.color}}>{z.label}</span>))}
-      </div>
-      <div className="sb-timeline">
-        <span className="sb-tl-label">30-day trend</span>
-        <div className="sb-tl-bars">
-          {bars.map((h,i)=>{
-            const c = h>55?"#66bb6a":h<45?"#ef5350":"#ffa726";
-            return <div key={i} className="sb-tl-bar" style={{height:`${h}%`,background:c}}/>;
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Signal Badge ──────────────────────────────────────────────────────────────
-function SignalBadge({signal}){
-  const c={BUY:"#00e676",SELL:"#ff5252",HOLD:"#ffd740"};
-  return <span className="sig-badge" style={{color:c[signal]||"#aaa",borderColor:c[signal]||"#aaa"}}>{signal}</span>;
-}
-
-// ── AI Loading Steps Panel ────────────────────────────────────────────────────
-const AI_STEPS = [
-  {icon:"📊", label:"Scanning fundamentals…"},
-  {icon:"💬", label:"Reading market sentiment…"},
-  {icon:"📰", label:"Parsing recent news…"},
-  {icon:"📈", label:"Running technical analysis…"},
-  {icon:"🐂", label:"Building bull case…"},
-  {icon:"🐻", label:"Building bear case…"},
-  {icon:"🛡️", label:"Assessing risk profile…"},
-  {icon:"🤖", label:"Portfolio manager deciding…"},
-];
-
-function AILoadingPanel({ ticker }) {
-  const [step, setStep] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setStep(s => (s < AI_STEPS.length - 1 ? s+1 : s)), 400);
-    return () => clearInterval(id);
-  }, []);
-
-  return (
-    <div className="ai-loading-panel">
-      <div className="ai-loading-ticker">{ticker}</div>
-      <div className="ai-loading-title">Running Multi-Agent AI Analysis</div>
-      <div className="ai-loading-steps">
-        {AI_STEPS.map((s, i) => (
-          <div key={i} className={`ai-step ${i < step ? "done" : i === step ? "active" : "pending"}`}>
-            <span className="ai-step-icon">{s.icon}</span>
-            <span className="ai-step-label">{s.label}</span>
-            <span className="ai-step-status">
-              {i < step ? "✓" : i === step ? <span className="ai-dot-spin"/> : ""}
-            </span>
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "20px",
+      padding: "20px",
+      backgroundColor: "rgba(255,255,255,0.02)",
+      borderRadius: "12px",
+      border: "1px solid rgba(255,255,255,0.1)"
+    }}>
+      <div style={{ position: "relative", width: "150px", height: "150px" }}>
+        <svg width="150" height="150" style={{ transform: "rotate(-90deg)" }}>
+          <circle
+            cx="75"
+            cy="75"
+            r="50"
+            fill="none"
+            stroke="rgba(255,255,255,0.1)"
+            strokeWidth="8"
+          />
+          <circle
+            cx="75"
+            cy="75"
+            r="50"
+            fill="none"
+            stroke={color}
+            strokeWidth="8"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            style={{ transition: "stroke-dashoffset 0.5s ease-in-out" }}
+          />
+        </svg>
+        <div style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          textAlign: "center"
+        }}>
+          <div style={{
+            fontSize: "32px",
+            fontWeight: "bold",
+            color: color
+          }}>
+            {confidence}%
           </div>
-        ))}
+          <div style={{
+            fontSize: "12px",
+            color: "rgba(255,255,255,0.6)",
+            marginTop: "4px"
+          }}>
+            Confidence
+          </div>
+        </div>
+      </div>
+      
+      <div style={{
+        fontSize: "24px",
+        fontWeight: "bold",
+        color: getVerdictColor(),
+        padding: "12px 24px",
+        backgroundColor: "rgba(255,255,255,0.05)",
+        borderRadius: "8px",
+        border: `2px solid ${getVerdictColor()}`
+      }}>
+        {verdict}
       </div>
     </div>
   );
@@ -233,11 +191,9 @@ export default function Markets() {
   const [companies, setCompanies] = useState(MOCK["IN"]);
   const [listLoad,  setListLoad]  = useState(false);
   const [selected,  setSelected]  = useState(null);
-  const [preview,   setPreview]   = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
   const [analysis,  setAnalysis]  = useState(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError,   setAiError]   = useState(null);
-  const [expanded,  setExpanded]  = useState(null);
+  const [error,     setError]     = useState(null);
 
   const loadCompanies = useCallback(async(code) => {
     setListLoad(true);
@@ -255,32 +211,44 @@ export default function Markets() {
 
   useEffect(() => { loadCompanies(country); }, [country, loadCompanies]);
 
-  const handleSelect = async (co) => {
-    setSelected(co); setAnalysis(null); setExpanded(null); setAiError(null);
-    setPreview({loading: true});
-    await new Promise(r => setTimeout(r, 400));
-    const chg = parseFloat(co.change);
-    const score = Math.min(95, Math.max(5, 50 + chg * 5 + (Math.random()-0.5) * 8));
-    const signal = score > 62 ? "BUY" : score < 38 ? "SELL" : "HOLD";
-    setPreview({score, signal, loading: false});
+  const handleSelect = (co) => {
+    setSelected(co);
+    setAnalysis(null);
+    setError(null);
   };
 
   const runAnalysis = async () => {
     if (!selected) return;
-    setAiLoading(true); setAnalysis(null); setAiError(null);
-    const ci = COUNTRIES.find(c => c.code === country);
+    
+    setAnalyzing(true);
+    setError(null);
+    setAnalysis(null);
+    
     try {
-      const result = await fetchClaudeAnalysis(
-        selected.ticker, selected.name,
-        `${ci?.currency}${selected.price}`,
-        selected.change, ci?.label
-      );
-      setAnalysis(result);
+      const response = await fetch("http://localhost:5000/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ ticker: selected.ticker })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setAnalysis(data);
+      } else {
+        setError(data.error || "Analysis failed");
+      }
     } catch (err) {
-      setAiError("Analysis unavailable. Check your connection and try again.");
-      console.error("Claude API error:", err);
+      setError(err.message || "Could not connect to analysis server. Make sure api_server.py is running on port 5000.");
+      console.error("Analysis error:", err);
     } finally {
-      setAiLoading(false);
+      setAnalyzing(false);
     }
   };
 
@@ -301,7 +269,6 @@ export default function Markets() {
                 className={`mkt-ctab ${country === c.code ? "active" : ""}`}
                 onClick={() => {
                   setCountry(c.code); setSelected(null);
-                  setPreview(null); setAnalysis(null); setAiError(null);
                 }}>
                 <span>{c.flag}</span><span>{c.label}</span>
               </button>
@@ -342,12 +309,12 @@ export default function Markets() {
           <div className="mkt-empty">
             <div className="mkt-empty-ico">📊</div>
             <h2>Select a company to begin</h2>
-            <p>Pick any stock from the sidebar to view live charts and Claude-powered AI analysis.</p>
+            <p>Pick any stock from the sidebar to view live market charts and run AI analysis.</p>
           </div>
         ) : (
-          <>
+          <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "0", padding: "0" }}>
             {/* Header */}
-            <div className="mkt-chdr">
+            <div className="mkt-chdr" style={{flexShrink: 0}}>
               <div>
                 <span className="mkt-ctk">{shortTicker}</span>
                 <span className="mkt-cnm">{selected.name}</span>
@@ -360,104 +327,87 @@ export default function Markets() {
               </div>
             </div>
 
-            {/* TradingView chart */}
-            <div className="mkt-chart">
+            {/* Scrollable Control Panel */}
+            <div style={{flexShrink: 0, overflowY: "auto", padding: "20px", borderBottom: "1px solid rgba(255,255,255,0.05)"}}>
+              {/* Analysis Button */}
+              <button
+                onClick={runAnalysis}
+                disabled={analyzing}
+                style={{
+                  padding: "12px 24px",
+                  backgroundColor: analyzing ? "#666" : "#3b82f6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  cursor: analyzing ? "not-allowed" : "pointer",
+                  transition: "background-color 0.3s",
+                  maxWidth: "300px",
+                  marginBottom: error || analysis ? "16px" : "0"
+                }}
+                onMouseOver={(e) => !analyzing && (e.target.style.backgroundColor = "#2563eb")}
+                onMouseOut={(e) => !analyzing && (e.target.style.backgroundColor = "#3b82f6")}
+              >
+                {analyzing ? "🔄 Running Analysis..." : "🚀 Run AI Analysis"}
+              </button>
+
+              {/* Error message */}
+              {error && (
+                <div style={{
+                  padding: "12px 16px",
+                  backgroundColor: "rgba(239, 68, 68, 0.1)",
+                  border: "1px solid rgba(239, 68, 68, 0.5)",
+                  borderRadius: "8px",
+                  color: "#fca5a5",
+                  marginBottom: analysis ? "16px" : "0"
+                }}>
+                  ⚠️ {error}
+                </div>
+              )}
+
+              {/* Analysis Results */}
+              {analysis && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                  {/* Confidence Gauge */}
+                  <div>
+                    <h3 style={{ marginBottom: "16px", color: "rgba(255,255,255,0.8)" }}>Market Signal</h3>
+                    <ConfidenceGauge 
+                      confidence={analysis.confidence} 
+                      verdict={analysis.verdict}
+                    />
+                  </div>
+
+                  {/* Summary */}
+                  <div style={{
+                    padding: "20px",
+                    backgroundColor: "rgba(255,255,255,0.02)",
+                    borderRadius: "12px",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    maxHeight: "400px",
+                    overflowY: "auto"
+                  }}>
+                    <h3 style={{ marginBottom: "12px", color: "rgba(255,255,255,0.8)" }}>Analysis Summary</h3>
+                    <pre style={{
+                      fontSize: "12px",
+                      color: "rgba(255,255,255,0.6)",
+                      whiteSpace: "pre-wrap",
+                      wordWrap: "break-word",
+                      fontFamily: "monospace",
+                      margin: 0
+                    }}>
+                      {analysis.summary}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* TradingView chart - Takes remaining space */}
+            <div style={{flex: 1, minHeight: 0, overflow: "hidden", background: "#0d1117"}}>
               {tvSym && <TVChart symbol={tvSym}/>}
             </div>
-
-            {/* Sentiment bar */}
-            <div className="mkt-sent-wrap">
-              {preview?.loading
-                ? <div className="mkt-sent-loading"><span className="mkt-spinner"/>Calculating sentiment…</div>
-                : preview && <SentimentBar score={preview.score}/>
-              }
-            </div>
-
-            {/* Action strip — hidden while AI is running */}
-            {preview && !preview.loading && !aiLoading && (
-              <div className="mkt-action">
-                <div className="mkt-qs">
-                  <span className="mkt-qs-lbl">Quick Signal</span>
-                  <SignalBadge signal={preview.signal}/>
-                  <span className="mkt-qs-conf">{Math.round(preview.score)}% confidence</span>
-                </div>
-                <button className="mkt-run" onClick={runAnalysis}>
-                  🤖 Run AI Analysis
-                </button>
-              </div>
-            )}
-
-            {/* AI loading steps */}
-            {aiLoading && <AILoadingPanel ticker={shortTicker}/>}
-
-            {/* Error state */}
-            {aiError && !aiLoading && (
-              <div className="mkt-error">
-                <span>⚠️ {aiError}</span>
-                <button className="mkt-retry" onClick={runAnalysis}>Retry</button>
-              </div>
-            )}
-
-            {/* Analysis results */}
-            {analysis && !aiLoading && (
-              <div className="mkt-panel mkt-panel-anim">
-
-                {/* Decision banner */}
-                <div className={`mkt-dec sig-${analysis.signal}`}>
-                  <div className="mkt-dec-l">
-                    <span className="mkt-dec-lbl">Portfolio Manager Decision</span>
-                    <div className="mkt-dec-row">
-                      <SignalBadge signal={analysis.signal}/>
-                      <span className="mkt-dec-conf">{analysis.confidence}% confidence</span>
-                    </div>
-                    <p className="mkt-dec-txt">{analysis.decision}</p>
-                  </div>
-                  <div className={`mkt-dec-big sig-${analysis.signal}`}>
-                    {analysis.signal === "BUY" ? "↑" : analysis.signal === "SELL" ? "↓" : "◆"}
-                  </div>
-                </div>
-
-                {/* Agent breakdown */}
-                <div className="mkt-agents-ttl">Agent Breakdown</div>
-                <div className="mkt-agents">
-                  {Object.entries(analysis.agents).map(([key, agent], idx) => {
-                    const m = AGENT_META[key];
-                    if (!m) return null;
-                    const open = expanded === key;
-                    return (
-                      <div key={key}
-                        className={`mkt-ac ${open ? "open" : ""}`}
-                        style={{"--ac": m.color, animationDelay: `${idx * 0.07}s`}}
-                        onClick={() => setExpanded(open ? null : key)}>
-                        <div className="mkt-ac-top">
-                          <span className="mkt-ac-ico">{m.icon}</span>
-                          <div className="mkt-ac-info">
-                            <span className="mkt-ac-lbl">{m.label}</span>
-                            {agent.signal && <SignalBadge signal={agent.signal}/>}
-                            {agent.level && (
-                              <span className="mkt-rl" data-lv={agent.level}>{agent.level} RISK</span>
-                            )}
-                          </div>
-                          {agent.score && (
-                            <span className="mkt-ac-sc">{agent.score}</span>
-                          )}
-                        </div>
-                        <p className="mkt-ac-sum">
-                          {open ? agent.summary : agent.summary.slice(0, 90) + "…"}
-                        </p>
-                        <span className="mkt-ac-tog">{open ? "▲ collapse" : "▼ expand"}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Re-run */}
-                <button className="mkt-rerun" onClick={runAnalysis}>
-                  🔄 Re-run Analysis
-                </button>
-              </div>
-            )}
-          </>
+          </div>
         )}
       </main>
     </div>

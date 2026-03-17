@@ -3,6 +3,29 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from market_state import ResearchInput, HistoricalContext
+import sys
+import os
+
+# Add path to import news and sentiment agents
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'news&sentiment_Analyst'))
+
+# Add path to import technicalanalyst (RandomForest)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+try:
+    from agents.news_analyst import analyze as analyze_news
+    from agents.sentiment_analyst import analyze_sentiment
+    AGENTS_AVAILABLE = True
+except (ImportError, ModuleNotFoundError) as e:
+    print(f"[DataCollector] Warning: Could not import sentiment/news agents: {e}")
+    AGENTS_AVAILABLE = False
+
+try:
+    from technicalanalyst import get_rf_prediction
+    RF_AVAILABLE = True
+except (ImportError, ModuleNotFoundError) as e:
+    print(f"[DataCollector] Warning: Could not import RandomForest model: {e}")
+    RF_AVAILABLE = False
 
 
 class DataCollector:
@@ -11,6 +34,8 @@ class DataCollector:
     def __init__(self, ticker):
         self.ticker = ticker
         self.stock = yf.Ticker(ticker)
+        self.news_report = None
+        self.sentiment_report = None
 
     def calculate_rsi(self, prices, periods=14):
         """Calculate RSI from price data"""
@@ -56,13 +81,75 @@ class DataCollector:
         return signals
 
     def get_historical_sentiment(self, days=180):
-        """Simulate historical sentiment (in production, use news API)"""
-        # This is simulated - in real app, you'd fetch from news API
+        """Get historical sentiment scores or fallback to simulated data"""
+        # This is simulated - in real app, you'd have historical sentiment database
         base = 0.3
         sentiment = []
         for i in range(5):
             sentiment.append(round(base + np.random.uniform(-0.2, 0.2), 2))
         return sentiment
+
+    def get_sentiment_data(self):
+        """
+        Get real sentiment data from news and sentiment analysis agents.
+        Falls back to simulation if agents unavailable.
+        """
+        if not AGENTS_AVAILABLE:
+            print(f"[DataCollector] Using simulated sentiment data for {self.ticker}")
+            return self._get_simulated_sentiment()
+        
+        print(f"[DataCollector] Running sentiment analysis agents for {self.ticker}...")
+        
+        try:
+            # Run sentiment analysis agent (social media sentiment)
+            print(f"  → Analyzing social sentiment (Reddit, StockTwits)...")
+            sentiment_report = analyze_sentiment(self.ticker, time_window=24, max_posts=150)
+            social_sentiment = sentiment_report.get('sentiment_score', 0.0)
+            print(f"    Social sentiment score: {social_sentiment}")
+            
+            # Run news analysis agent
+            print(f"  → Analyzing news sentiment...")
+            news_report = analyze_news(self.ticker)
+            
+            # Convert news sentiment to comparable scale (-1 to +1)
+            news_score = news_report.get('overall_news_score', 5)  # 0-10 scale
+            news_sentiment = (news_score - 5) / 5  # Convert to -1 to +1 scale
+            news_overall = news_report.get('overall_sentiment', 'NEUTRAL')
+            print(f"    News sentiment: {news_overall} (score: {news_sentiment})")
+            
+            # Calculate major_event_risk from news events
+            events = news_report.get('events', [])
+            if events:
+                avg_impact = sum(e.get('impact_score', 5) for e in events) / len(events)
+                major_event_risk = min(1.0, avg_impact / 10.0)  # Convert 0-10 to 0-1 scale
+            else:
+                major_event_risk = 0.3
+            
+            print(f"    Major event risk: {major_event_risk:.2f}")
+            print(f"[DataCollector] Sentiment analysis complete!")
+            
+            return {
+                "news_sentiment": round(news_sentiment, 2),
+                "social_sentiment": round(social_sentiment, 2),
+                "major_event_risk": round(major_event_risk, 2),
+                "news_report": news_report,
+                "sentiment_report": sentiment_report
+            }
+            
+        except Exception as e:
+            print(f"[DataCollector] Error running agents: {e}")
+            print(f"[DataCollector] Falling back to simulated sentiment data")
+            return self._get_simulated_sentiment()
+    
+    def _get_simulated_sentiment(self):
+        """Return simulated/fallback sentiment data"""
+        return {
+            "news_sentiment": round(np.random.uniform(-0.3, 0.8), 2),
+            "social_sentiment": round(np.random.uniform(-0.2, 0.7), 2),
+            "major_event_risk": round(np.random.uniform(0.1, 0.6), 2),
+            "news_report": None,
+            "sentiment_report": None
+        }
 
     def get_current_data(self):
         """Get current market data"""
@@ -160,17 +247,8 @@ class DataCollector:
         except:
             return 0.65
 
-    def get_sentiment_data(self):
-        """Simulate sentiment data (replace with actual news API)"""
-        # In production, use NewsAPI, Finnhub, etc.
-        return {
-            "news_sentiment": round(np.random.uniform(-0.3, 0.8), 2),
-            "social_sentiment": round(np.random.uniform(-0.2, 0.7), 2),
-            "major_event_risk": round(np.random.uniform(0.1, 0.6), 2)
-        }
-
     def get_research_input(self):
-        """Get complete ResearchInput with live and historical data"""
+        """Get complete ResearchInput with live, historical data, and ML predictions"""
 
         # Get current data
         current = self.get_current_data()
@@ -180,11 +258,22 @@ class DataCollector:
         hist_macd = self.get_historical_macd()
         hist_sentiment = self.get_historical_sentiment()
 
-        # Get sentiment
+        # Get sentiment (this also populates self.news_report and self.sentiment_report)
         sentiment = self.get_sentiment_data()
+        self.news_report = sentiment.get('news_report')
+        self.sentiment_report = sentiment.get('sentiment_report')
 
         # Get accuracy score
         accuracy = self.get_accuracy_score()
+
+        # Get RandomForest ML prediction
+        rf_prediction = None
+        if RF_AVAILABLE:
+            print(f"[DataCollector] Running RandomForest prediction for {self.ticker}...")
+            try:
+                rf_prediction = get_rf_prediction(self.ticker)
+            except Exception as e:
+                print(f"[DataCollector] Error getting RF prediction: {e}")
 
         # Create historical context
         historical = HistoricalContext(
@@ -195,6 +284,11 @@ class DataCollector:
         )
 
         # Create research input
+        # Get company name safely (handle None case when network fails)
+        company_name = self.ticker
+        if self.stock.info and isinstance(self.stock.info, dict):
+            company_name = self.stock.info.get('longName', self.ticker)
+        
         research_input = ResearchInput(
             rsi=current['rsi'],
             macd_signal=current['macd_signal'],
@@ -205,8 +299,9 @@ class DataCollector:
             major_event_risk=sentiment['major_event_risk'],
             market_trend=current['market_trend'],
             sector_performance=current['sector_performance'],
+            rf_prediction=rf_prediction,
             ticker=self.ticker,
-            company_name=self.stock.info.get('longName', self.ticker),
+            company_name=company_name,
             historical=historical
         )
 

@@ -57,7 +57,7 @@ If historical accuracy is LOW (<60%):
         """
         Generate a bearish argument based on the market data and counter
         the bull's previous argument.
-        Now includes historical context awareness!
+        Now includes historical context + RandomForest ML signals!
         """
 
         if bull_argument is None:
@@ -65,7 +65,21 @@ If historical accuracy is LOW (<60%):
             prompt = f"""You are a bearish equity research analyst. Based on the following market data for {data.company_name} ({data.ticker}), write a compelling argument for why investors should SELL or AVOID the stock.
 
 CURRENT MARKET DATA:
-{data.to_readable_string()}
+{data.to_readable_string()}"""
+
+            # Add RF prediction guidance if available
+            if data.rf_prediction:
+                rf_pred = data.rf_prediction
+                prompt += f"""
+
+MACHINE LEARNING SIGNAL (RandomForest Prediction):
+- Model Prediction: {rf_pred.get('prediction')}
+- Confidence: {rf_pred.get('confidence')} (0-1 scale)
+- Signal Strength: {rf_pred.get('signal_strength')}
+
+Guidance: If the ML model predicts DOWN with strong confidence, use it to validate your bearish thesis. If it predicts UP, acknowledge the conflict but explain why sentiment/news risks outweigh technical ML upside."""
+
+            prompt += """
 
 Your task:
 1. Focus on the negative signals and risks in the data
@@ -85,7 +99,21 @@ BULL ARGUMENT: "{bull_argument}"
 Based on the market data for {data.company_name} ({data.ticker}), write a rebuttal defending your SELL/AVOID thesis.
 
 CURRENT MARKET DATA:
-{data.to_readable_string()}
+{data.to_readable_string()}"""
+
+            # Add RF prediction guidance if available
+            if data.rf_prediction:
+                rf_pred = data.rf_prediction
+                prompt += f"""
+
+MACHINE LEARNING SIGNAL (RandomForest Prediction):
+- Model Prediction: {rf_pred.get('prediction')}
+- Confidence: {rf_pred.get('confidence')} (0-1 scale)
+- Signal Strength: {rf_pred.get('signal_strength')}
+
+Guidance: Use ML signals to strengthen your rebuttal if they align with your bearish view."""
+
+            prompt += """
 
 Your task:
 1. Directly counter the bull's key points
