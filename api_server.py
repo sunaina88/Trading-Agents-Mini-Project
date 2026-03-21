@@ -11,12 +11,10 @@ import re
 import json
 from datetime import datetime
 
-# Add TradingAgents to path FIRST, before any imports
 TRADING_AGENTS_DIR = os.path.join(os.path.dirname(__file__), 'TradingAgents')
 if TRADING_AGENTS_DIR not in sys.path:
     sys.path.insert(0, TRADING_AGENTS_DIR)
 
-# Also add news&sentiment_Analyst for agent imports
 NEWS_SENTIMENT_DIR = os.path.join(os.path.dirname(__file__), 'news&sentiment_Analyst')
 if NEWS_SENTIMENT_DIR not in sys.path:
     sys.path.insert(0, NEWS_SENTIMENT_DIR)
@@ -25,9 +23,8 @@ from data_collector import DataCollector
 from debate_engine import DebateEngine
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend requests
+CORS(app)  
 
-# Store analysis results
 analysis_results = {}
 
 
@@ -62,7 +59,6 @@ def analyze():
         data = request.get_json()
         ticker = data.get('ticker', 'AAPL').upper().strip()
 
-        # FIX #5: Input validation — only allow valid ticker characters
         if not re.match(r'^[A-Z0-9.\-]+$', ticker):
             return jsonify({
                 "success": False,
@@ -72,7 +68,6 @@ def analyze():
 
         print(f"\n[API] Running analysis for {ticker}...")
 
-        # Phase 1: Get research input and run debate
         print(f"[API] Fetching live data and running research agents...")
         collector = DataCollector(ticker)
         research_input = collector.get_research_input()
@@ -81,22 +76,18 @@ def analyze():
         engine = DebateEngine(model_name="llama3.2", rounds=1)
         debate_output = engine.run(research_input, verbose=True)
 
-        # Extract decision
         decision = debate_output.get('decision', {})
         winner = decision.get('winner', 'NEUTRAL')
         recommended_action = decision.get('recommended_action', 'HOLD')
         deciding_factor = decision.get('deciding_factor', 'No clear signal')
 
-        # FIX #1 + #3: Safely parse confidence as int, keep raw (0-10) for summary display
         raw_confidence = decision.get('confidence', 5)
         try:
             raw_confidence = int(raw_confidence)
         except (ValueError, TypeError):
             raw_confidence = 5
-        # Clamp to valid range 0-10
         raw_confidence = max(0, min(10, raw_confidence))
 
-        # Extract researcher arguments from debate history
         debate_history = debate_output.get('debate_history', [])
         bull_argument = ""
         bear_argument = ""
@@ -106,10 +97,8 @@ def analyze():
             elif speaker == "Bear":
                 bear_argument = argument
 
-        # Phase 2: Generate summary (using debate output as context)
         print(f"[API] Generating analysis summary...")
 
-        # FIX #2: Safely access rf_prediction fields
         rf = research_input.rf_prediction if research_input.rf_prediction else {}
 
         summary = f"""
@@ -143,7 +132,6 @@ MACHINE LEARNING SIGNAL:
   Signal Strength: {rf.get('signal_strength', 'N/A')}
 """
 
-        # Convert verdict to simple format
         verdict_map = {
             'Bull': 'BUY',
             'Bear': 'SELL',
@@ -152,23 +140,19 @@ MACHINE LEARNING SIGNAL:
         }
         verdict = verdict_map.get(winner, 'HOLD')
 
-        # FIX #1 + #3: Multiply AFTER using raw_confidence in summary, cap at 100
         confidence_pct = min(100, raw_confidence * 10)
 
-        # Store result
         result = {
             "success": True,
             "ticker": ticker,
             "timestamp": datetime.now().isoformat(),
             "summary": summary.strip(),
             "verdict": verdict,
-            "confidence": confidence_pct,  # 0-100 scale for the gauge
+            "confidence": confidence_pct,  
             "decision": decision
         }
 
-        # Store for potential retrieval
         analysis_results[ticker] = result
-
         print(f"[API] ✓ Analysis complete for {ticker}")
         return jsonify(result), 200
 

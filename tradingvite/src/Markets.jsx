@@ -328,7 +328,7 @@ export default function Markets() {
             </div>
 
             {/* Scrollable Control Panel */}
-            <div style={{flexShrink: 0, overflowY: "auto", padding: "20px", borderBottom: "1px solid rgba(255,255,255,0.05)"}}>
+            <div style={{flexShrink: 0, maxHeight: "300px", overflowY: "auto", padding: "20px", borderBottom: "1px solid rgba(255,255,255,0.05)"}}>
               {/* Analysis Button */}
               <button
                 onClick={runAnalysis}
