@@ -1,0 +1,298 @@
+/* Community Container */
+.community-container {
+  min-height: 100vh;
+  background-color: #ffffff;
+}
+
+/* Header Section */
+.community-header {
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  padding: 20px 0;
+}
+
+.community-header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.community-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* Tabs */
+.community-tabs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: none;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.tab-button.active {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.tab-button:hover {
+  opacity: 0.8;
+}
+
+/* Filters */
+.community-filters {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.filter-button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.filter-button.icon-only {
+  padding: 8px 12px;
+}
+
+.filter-button:hover {
+  background-color: #f9fafb;
+}
+
+/* Content Section */
+.community-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* Ideas Grid */
+.ideas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+/* Idea Card */
+.idea-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.idea-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Idea Image */
+.idea-image {
+  width: 100%;
+  height: 200px;
+  background-color: #f3f4f6;
+  position: relative;
+  overflow: hidden;
+}
+
+.idea-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.idea-category {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background-color: #3b82f6;
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Idea Content */
+.idea-content {
+  padding: 16px;
+}
+
+.idea-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.idea-description {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+  margin-bottom: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.idea-author {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+
+/* Idea Footer */
+.idea-footer {
+  display: flex;
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.idea-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .ideas-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .community-content {
+    padding: 24px 16px;
+  }
+
+  .community-header-content {
+    padding: 0 16px;
+  }
+
+  .community-title {
+    font-size: 24px;
+  }
+
+  .community-filters {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .ideas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .community-tabs {
+    flex-wrap: wrap;
+  }
+}/* ===== DARK MODE ===== */
+.dark .community-container {
+  background-color: #0f172a;
+}
+
+.dark .community-header {
+  background-color: #0f172a;
+  border-bottom: 1px solid #1e293b;
+}
+
+.dark .community-title {
+  color: #f9fafb;
+}
+
+/* Tabs */
+.dark .tab-button {
+  background-color: #1e293b;
+  color: #cbd5f5;
+}
+
+.dark .tab-button.active {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* Filters */
+.dark .filter-button {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  color: #e5e7eb;
+}
+
+.dark .filter-button:hover {
+  background-color: #1e293b;
+}
+
+/* Cards */
+.dark .idea-card {
+  background-color: #020617;
+  border-color: #1e293b;
+}
+
+.dark .idea-card:hover {
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+}
+
+/* Idea Image */
+.dark .idea-image {
+  background-color: #1e293b;
+}
+
+/* Content */
+.dark .idea-title {
+  color: #f9fafb;
+}
+
+.dark .idea-description {
+  color: #cbd5e1;
+}
+
+.dark .idea-author {
+  color: #94a3b8;
+}
+
+/* Footer */
+.dark .idea-footer {
+  border-top: 1px solid #1e293b;
+}
+
+.dark .idea-stat {
+  color: #cbd5e1;
+}
+
