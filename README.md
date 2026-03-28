@@ -128,11 +128,33 @@ cd tradingvite && npm run dev
 
 ## 📊 Available Stocks
 
-### India NSE
-RELIANCE.NS, TCS.NS, HDFCBANK.NS, INFY.NS, ICICIBANK.NS, BAJFINANCE.NS, WIPRO.NS, SBIN.NS, TATAMOTORS.NS, AXISBANK.NS
+### India BSE (29 stocks)
+**IT/Tech**: RELIANCE.NS, TCS.NS, INFY.NS, WIPRO.NS, TECHM.NS, HCLTECH.NS  
+**Banking/Finance**: HDFCBANK.NS, ICICIBANK.NS, SBIN.NS, AXISBANK.NS, KOTAKBANK.NS, BAJFINANCE.NS  
+**Auto**: TATAMOTORS.NS, MARUTI.NS, HEROMOTOCO.NS  
+**Energy/Utilities**: NTPC.NS, ONGC.NS, POWERGRID.NS, ADANIPORTS.NS  
+**Pharma**: SUNPHARMA.NS, CIPLA.NS, DRREDDY.NS  
+**FMCG**: HINDUNILVR.NS, ITC.NS  
+**Cement/Construction**: ULTRACEMCO.NS, GRASIM.NS, LT.NS  
+**Telecom**: BHARTIARTL.NS  
+**Paints**: ASIANPAINT.NS  
+**Steel**: JSWSTEEL.NS
 
-### USA NASDAQ
-AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA, JPM, WMT, BAC
+### USA NASDAQ/NYSE (30 stocks)
+**Tech Giants**: AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA, ADBE, CRM, ORCL, IBM, AMD  
+**Financial**: JPM, BAC, V, MA  
+**Consumer**: NFLX, DIS, HD, WMT, COST, MCD, NKE, KO, PEP  
+**Healthcare**: PFE  
+**Semiconductors**: INTC, CSCO  
+**Transportation**: UBER  
+**Entertainment**: SPOT
+
+### Hong Kong HKEX (10 stocks)
+**Tech/Internet**: 0700.HK (Tencent), 9988.HK (Alibaba), 3690.HK (Meituan), 9618.HK (JD.com)  
+**Telecom/Utilities**: 0941.HK (China Mobile), 0002.HK (CLP Holdings)  
+**Financial**: 0005.HK (HSBC), 1299.HK (AIA Group)  
+**Energy**: 0883.HK (CNOOC)  
+**Conglomerates**: 0001.HK (CK Hutchison)
 
 ### China HKEX
 0700.HK (Tencent), 9988.HK (Alibaba), 3690.HK (Meituan), 9618.HK (JD.com), 0941.HK (China Mobile)

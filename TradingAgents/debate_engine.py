@@ -18,19 +18,27 @@ class DebateEngine:
         Run the debate for n rounds.
         Returns a dict with debate history and facilitator's decision.
         """
+
+        quant_score = research_input.compute_score()
+        print(f"\nQUANT SCORE: {quant_score} (positive=bullish, negative=bearish)\n")
+
         history = []
         last_bull_arg = None
         last_bear_arg = None
 
         print(f"\nDEBATE: {research_input.company_name} ({research_input.ticker})\n")
 
+        print("\n[DEBUG] Research Input:")
+        print(research_input)
+        print("\n[DEBUG] Formatted Input:")
+        print(research_input.to_readable_string())
+
         for round_num in range(1, self.rounds + 1):
             print(f"\nROUND {round_num}\n")
 
             # Bull's turn
             print("\nBULLISH RESEARCHER:")
-            bull_arg = self.bull.generate_argument(research_input, last_bear_arg)
-            history.append(("Bull", bull_arg))
+            bull_arg = self.bull.generate_argument(research_input, last_bear_arg, quant_score)            history.append(("Bull", bull_arg))
             last_bull_arg = bull_arg
             if verbose:
                 print(bull_arg)
@@ -38,8 +46,7 @@ class DebateEngine:
 
             # Bear's turn
             print("\nBEARISH RESEARCHER:")
-            bear_arg = self.bear.generate_argument(research_input, last_bull_arg)
-            history.append(("Bear", bear_arg))
+            bear_arg = self.bear.generate_argument(research_input, last_bull_arg, quant_score)            history.append(("Bear", bear_arg))
             last_bear_arg = bear_arg
             if verbose:
                 print(bear_arg)

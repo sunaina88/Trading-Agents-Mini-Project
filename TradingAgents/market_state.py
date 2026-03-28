@@ -59,6 +59,7 @@ class ResearchInput:
     ticker: Optional[str] = "AAPL"
     company_name: Optional[str] = "Apple Inc."
 
+
     def to_readable_string(self) -> str:
         """Format the data nicely for prompts with historical context and ML predictions."""
         base_str = f"""
@@ -106,3 +107,44 @@ Trend Analysis:       {self.historical.get_trend_consistency()}
 """
 
         return base_str
+    
+    def compute_score(self):
+        score = 0
+
+        # Market Trend (strongest signal)
+        if self.market_trend == "bullish":
+            score += 2
+        elif self.market_trend == "bearish":
+            score -= 2
+
+        # RSI
+        if self.rsi > 60:
+            score += 1
+        elif self.rsi < 40:
+            score -= 1
+
+        # MACD
+        if self.macd_signal == "bullish":
+            score += 1
+        elif self.macd_signal == "bearish":
+            score -= 1
+
+        # Price vs MA50
+        if self.price_vs_ma50 == "above":
+            score += 1
+        else:
+            score -= 1
+
+        # Sentiment (scaled)
+        score += self.news_sentiment * 0.5
+        score += self.social_sentiment * 0.5
+
+        # ML (only if strong)
+        if self.rf_prediction:
+            if self.rf_prediction.get("signal_strength") == "STRONG":
+                if self.rf_prediction.get("prediction") == "UP":
+                    score += 1.5
+                elif self.rf_prediction.get("prediction") == "DOWN":
+                    score -= 1.5
+
+        return round(score, 2)

@@ -305,6 +305,11 @@ class DataCollector:
             historical=historical
         )
 
+        print("\n[DEBUG] RAW DATA COLLECTED:")
+        print(current)
+        print(sentiment)
+        print(rf_prediction)
+
         return research_input
 
 
