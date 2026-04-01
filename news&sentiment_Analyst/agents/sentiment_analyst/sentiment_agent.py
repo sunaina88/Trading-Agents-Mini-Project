@@ -38,16 +38,12 @@ class SentimentAgent:
         """
         start_time = time.time()
 
-        print(f"[SentimentAgent] Starting sentiment analysis for {ticker.upper()}")
-
         queries = self.query_builder(ticker)
-        print(f"[SentimentAgent] Generated {len(queries)} search queries: {queries}")
 
         reddit_posts = self.reddit_fetcher.fetch_posts(queries, time_window, max_posts // 2)
         stocktwits_posts = self.stocktwits_fetcher.fetch_messages(ticker, max_posts // 2)
 
         all_posts = reddit_posts + stocktwits_posts
-        print(f"[SentimentAgent] Fetched {len(all_posts)} total posts")
         analyzed_posts = self.finbert_analyzer.analyze_posts(all_posts)
 
         weighted_posts = self.engagement_weighter.apply_weighting(analyzed_posts)

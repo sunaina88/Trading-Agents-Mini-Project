@@ -19,8 +19,10 @@ NEWS_SENTIMENT_DIR = os.path.join(os.path.dirname(__file__), 'news&sentiment_Ana
 if NEWS_SENTIMENT_DIR not in sys.path:
     sys.path.insert(0, NEWS_SENTIMENT_DIR)
 
-from data_collector import DataCollector
-from debate_engine import DebateEngine
+from TradingAgents.data_collector import DataCollector
+from TradingAgents.debate_engine import DebateEngine
+
+from ollama_trading_agent import FuturePredictionAgent
 
 app = Flask(__name__)
 CORS(app)  
@@ -76,81 +78,22 @@ def analyze():
         engine = DebateEngine(model_name="llama3.2", rounds=1)
         debate_output = engine.run(research_input, verbose=True)
 
-        decision = debate_output.get('decision', {})
-        winner = decision.get('winner', 'NEUTRAL')
-        recommended_action = decision.get('recommended_action', 'HOLD')
-        deciding_factor = decision.get('deciding_factor', 'No clear signal')
-
-        raw_confidence = decision.get('confidence', 5)
-        try:
-            raw_confidence = int(raw_confidence)
-        except (ValueError, TypeError):
-            raw_confidence = 5
-        raw_confidence = max(0, min(10, raw_confidence))
-
-        debate_history = debate_output.get('debate_history', [])
-        bull_argument = ""
-        bear_argument = ""
-        for speaker, argument in debate_history:
-            if speaker == "Bull":
-                bull_argument = argument
-            elif speaker == "Bear":
-                bear_argument = argument
-
-        print(f"[API] Generating analysis summary...")
-
-        rf = research_input.rf_prediction if research_input.rf_prediction else {}
-
-        summary = f"""
-TRADING ANALYSIS SUMMARY FOR {ticker}
-{'='*60}
-
-RESEARCH CONSENSUS:
-  Winner: {winner}
-  Recommended Action: {recommended_action}
-  Confidence: {raw_confidence}/10
-  Key Factor: {deciding_factor}
-
-TECHNICAL INDICATORS:
-  RSI: {research_input.rsi:.1f}
-  MACD Signal: {research_input.macd_signal}
-  Price vs MA50: {research_input.price_vs_ma50}
-  Volume Trend: {research_input.volume_trend}
-
-MARKET SENTIMENT:
-  News Sentiment: {research_input.news_sentiment}
-  Social Sentiment: {research_input.social_sentiment}
-  Major Event Risk: {research_input.major_event_risk}
-
-MARKET CONTEXT:
-  Market Trend: {research_input.market_trend}
-  Sector Performance: {research_input.sector_performance}
-
-MACHINE LEARNING SIGNAL:
-  ML Prediction: {rf.get('prediction', 'N/A')}
-  Confidence: {rf.get('confidence', 'N/A')}
-  Signal Strength: {rf.get('signal_strength', 'N/A')}
-"""
-
-        verdict_map = {
-            'Bull': 'BUY',
-            'Bear': 'SELL',
-            'BULL': 'BUY',
-            'BEAR': 'SELL'
-        }
-        verdict = verdict_map.get(winner, 'HOLD')
-
-        confidence_pct = min(100, raw_confidence * 10)
+        print(f"[API] Running future prediction agent...")
+        agent = FuturePredictionAgent(ticker, debate_output)
+        future_result = agent.run()
 
         result = {
             "success": True,
             "ticker": ticker,
             "timestamp": datetime.now().isoformat(),
-            "summary": summary.strip(),
-            "verdict": verdict,
-            "confidence": confidence_pct,  
-            "decision": decision
+            "predictions": future_result["predictions"],
+            "final_decision": future_result["final_decision"],
+            "debate_output": future_result["debate_output"]
         }
+
+        analysis_results[ticker] = result
+        print(f"[API] ✓ Analysis complete for {ticker}")
+        return jsonify(result), 200
 
         analysis_results[ticker] = result
         print(f"[API] ✓ Analysis complete for {ticker}")

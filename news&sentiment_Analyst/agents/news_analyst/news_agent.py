@@ -14,19 +14,13 @@ class NewsAgent:
 
     def analyze(self, ticker: str) -> dict:
         """Run the news analysis pipeline and return structured report."""
-        print(f"[NewsAgent] Building context for {ticker}...")
         ctx = build_context(ticker)
         queries = ctx.get("company_keywords", []) + ctx.get("industry_keywords", [])
-        print(f"[NewsAgent] Fetching news with queries: {queries[:3]}...")
         articles = fetch_news(queries, max_articles=100)
-        print(f"[NewsAgent] Fetched {len(articles)} articles. Filtering relevant ones...")
         relevant = filter_articles(articles)
-        print(f"[NewsAgent] Filtered to {len(relevant)} relevant articles. Extracting events...")
         events = extract_events(relevant)
         unique = list(dict.fromkeys(events))
-        print(f"[NewsAgent] Extracted {len(unique)} unique events. Analyzing impacts...")
         analyzed = [analyze_event(ev) for ev in unique]
-        print(f"[NewsAgent] Analyzed {len(analyzed)} events. Detecting contradictions...")
         contradictions = detect_contradictions(analyzed)
         print(f"[NewsAgent] Generating final report...")
         report = generate_report(ticker.upper(), analyzed, contradictions)

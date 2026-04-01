@@ -1,7 +1,12 @@
 """Fetch news articles from Google News RSS."""
 
-import feedparser
 from typing import List, Dict
+
+try:
+    import feedparser
+    FEEDPARSER_AVAILABLE = True
+except ImportError:
+    FEEDPARSER_AVAILABLE = False
 
 
 def fetch_news(queries: List[str], max_articles: int = 50) -> List[Dict]:
@@ -14,6 +19,8 @@ def fetch_news(queries: List[str], max_articles: int = 50) -> List[Dict]:
     Returns:
         List of article dictionaries.
     """
+    if not FEEDPARSER_AVAILABLE:
+        return []
     articles = []
 
     for q in queries:

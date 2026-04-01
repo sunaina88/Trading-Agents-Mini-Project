@@ -65,5 +65,4 @@ class EngagementWeighter:
 
             weighted_posts.append(post_with_weight)
 
-        print(f"[EngagementWeighter] Applied weighting to {len(weighted_posts)} posts")
         return weighted_posts

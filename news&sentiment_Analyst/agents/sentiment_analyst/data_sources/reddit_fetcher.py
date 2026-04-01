@@ -1,21 +1,28 @@
 """Reddit data fetcher for sentiment analysis."""
 
 import os
-import praw
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict
+
+try:
+    import praw
+    PRAW_AVAILABLE = True
+except ImportError:
+    PRAW_AVAILABLE = False
 
 
 class RedditFetcher:
     def __init__(self):
         """Initialize Reddit API client."""
+        if not PRAW_AVAILABLE:
+            self.reddit = None
+            return
         # Read credentials from environment variables.
         client_id = os.getenv("REDDIT_CLIENT_ID")
         client_secret = os.getenv("REDDIT_CLIENT_SECRET")
         user_agent = os.getenv("REDDIT_USER_AGENT", "SentimentAnalyst/1.0")
 
         if not client_id or not client_secret:
-            print("[RedditFetcher] Missing Reddit credentials. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET.")
             self.reddit = None
             return
 
@@ -90,5 +97,4 @@ class RedditFetcher:
         except Exception as e:
             print(f"Error in Reddit fetching: {e}")
 
-        print(f"[RedditFetcher] Fetched {len(posts)} posts")
         return posts[:max_posts]

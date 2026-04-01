@@ -1,10 +1,5 @@
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import ollama
-from market_state import ResearchInput
+from ..market_state import ResearchInput
 
 
 class BullishResearcher:
@@ -29,6 +24,7 @@ IMPORTANT:
         return prompt
 
     def generate_argument(self, data, bear_argument=None, quant_score=0):
+        print(f"\n{data.to_readable_string()}\n")
         prompt = f"""You are a bullish QUANTITATIVE analyst.
 
 STRICT RULES:
@@ -74,8 +70,5 @@ Write 3-5 sentences.
             messages=[{"role": "user", "content": prompt}],
             options={"temperature": 0.2}
         )
-
-        print("\n[DEBUG - BULL INPUT]")
-        print(data.to_readable_string())
 
         return response["message"]["content"].strip()

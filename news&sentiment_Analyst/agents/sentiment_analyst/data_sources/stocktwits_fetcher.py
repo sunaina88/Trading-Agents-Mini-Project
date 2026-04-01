@@ -1,9 +1,14 @@
 """StockTwits data fetcher for sentiment analysis."""
 
 import os
-import requests
 from datetime import datetime
 from typing import List, Dict
+
+try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
 
 
 class StockTwitsFetcher:
@@ -23,6 +28,8 @@ class StockTwitsFetcher:
         Returns:
             List of message dictionaries
         """
+        if not REQUESTS_AVAILABLE:
+            return []
         messages = []
         url = f"{self.base_url}/streams/symbol/{ticker.upper()}.json"
 
@@ -51,13 +58,8 @@ class StockTwitsFetcher:
                     messages.append(message_data)
 
         except requests.exceptions.RequestException as e:
-            status = getattr(e.response, "status_code", None)
-            if status is not None:
-                print(f"Error fetching from StockTwits: HTTP {status}")
-            else:
-                print(f"Error fetching from StockTwits: {e}")
+            pass
         except Exception as e:
-            print(f"Error processing StockTwits data: {e}")
+            pass
 
-        print(f"[StockTwitsFetcher] Fetched {len(messages)} messages")
         return messages

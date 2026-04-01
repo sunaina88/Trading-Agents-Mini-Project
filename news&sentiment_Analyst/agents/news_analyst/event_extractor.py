@@ -16,8 +16,6 @@ def extract_events(articles: List[Dict]) -> List[str]:
         summary = art.get("summary", "")
         articles_list += f"\n{i}. Title: {title}\nSummary: {summary}\n"
     
-    print(f"[EventExtractor] Batch processing {len(articles_to_process)} articles...")
-    
     # Create batch prompt to send all articles at once
     batch_prompt = f"""
     Analyze the following {len(articles_to_process)} news articles and extract key financial events related to companies, industries, or markets.
@@ -55,9 +53,5 @@ def extract_events(articles: List[Dict]) -> List[str]:
     # Remove duplicates while preserving order
     unique_events = list(dict.fromkeys(events))
     
-    print("#######################################")
-    print(f"Extracted {len(unique_events)} unique events from {len(articles_to_process)} articles")
-    print("Events: " + str(unique_events))
-    print("#######################################")
     return unique_events
 

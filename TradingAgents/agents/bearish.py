@@ -1,10 +1,5 @@
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import ollama
-from market_state import ResearchInput
+from ..market_state import ResearchInput
 
 
 class BearishResearcher:
@@ -13,6 +8,7 @@ class BearishResearcher:
         self.model_name = model_name
 
     def generate_argument(self, data, bull_argument=None, quant_score=0):
+        print(f"\n{data.to_readable_string()}\n")
         prompt = f"""You are a bearish QUANTITATIVE analyst.
 
 STRICT RULES:
@@ -47,9 +43,6 @@ Evaluate bearish case based ONLY on data.
 
 Write 3-5 sentences.
 """
-        print("\n[DEBUG - BEAR INPUT]")
-        print(data.to_readable_string())
-
         response = ollama.chat(
             model=self.model_name,
             messages=[{"role": "user", "content": prompt}],
