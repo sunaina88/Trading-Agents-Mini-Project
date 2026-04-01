@@ -270,12 +270,7 @@ function AnalysisPanel({ analysis, ticker }) {
       </div>
 
       {/* 4 Section Cards */}
-      <div className="analysis-grid">
-        <SectionCard icon="📈" title="Technical Indicators" accentColor="#3b82f6">
-          {technical.map(({ key, val }) => (
-            <StatRow key={key} label={key} value={val} highlight={signalColor(val)} />
-          ))}
-        </SectionCard>
+      <div className="analysis-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
         <SectionCard icon="🧠" title="Machine Learning Signal" accentColor="#a855f7">
           {ml.map(({ key, val }) => (
             <StatRow key={key} label={key} value={val} highlight={signalColor(val)} />
@@ -422,8 +417,8 @@ export default function Markets() {
             </div>
 
             {/* Chart — fixed height, never resized */}
-            <div className="mkt-chart-fixed">
-              {tvSym && <TVChart key={tvSym} symbol={tvSym}/>}
+<          div style={{ height: "480px", minHeight: "480px", maxHeight: "480px", flexShrink: 0, overflow: "hidden", background: "#0d1117" }}>
+            {tvSym && <TVChart key={tvSym} symbol={tvSym}/>}
             </div>
 
             {/* Run button bar */}
