@@ -22,8 +22,6 @@ if NEWS_SENTIMENT_DIR not in sys.path:
 from TradingAgents.data_collector import DataCollector
 from TradingAgents.debate_engine import DebateEngine
 
-from ollama_trading_agent import FuturePredictionAgent
-
 app = Flask(__name__)
 CORS(app)  
 
@@ -78,22 +76,43 @@ def analyze():
         engine = DebateEngine(model_name="llama3.2", rounds=1)
         debate_output = engine.run(research_input, verbose=True)
 
-        print(f"[API] Running future prediction agent...")
-        agent = FuturePredictionAgent(ticker, debate_output)
-        future_result = agent.run()
+        # Extract decision from debate
+        decision = debate_output.get("decision", {})
+
+        # Build structured summary for frontend parsing
+        summary = f"""
+TECHNICAL INDICATORS:
+RSI: {research_input.current_rsi if hasattr(research_input, 'current_rsi') else 'N/A'}
+SMA_20: {research_input.sma_20 if hasattr(research_input, 'sma_20') else 'N/A'}
+SMA_50: {research_input.sma_50 if hasattr(research_input, 'sma_50') else 'N/A'}
+Price: ${research_input.current_price if hasattr(research_input, 'current_price') else 'N/A'}
+
+MACHINE LEARNING SIGNAL:
+Signal: {decision.get('recommended_action', 'HOLD')}
+Confidence: {decision.get('confidence', 5)}/10
+
+MARKET SENTIMENT:
+Sentiment: {decision.get('winner', 'Neutral')}
+
+MARKET CONTEXT:
+Analysis: {decision.get('deciding_factor', 'N/A')}
+
+RESEARCH CONSENSUS:
+Winner: {decision.get('winner', 'Neutral')}
+
+Key Factor: {decision.get('deciding_factor', 'Market consensus')}
+"""
 
         result = {
             "success": True,
             "ticker": ticker,
             "timestamp": datetime.now().isoformat(),
-            "predictions": future_result["predictions"],
-            "final_decision": future_result["final_decision"],
-            "debate_output": future_result["debate_output"]
+            "verdict": decision.get("recommended_action", "HOLD"),
+            "confidence": decision.get("confidence", 5) * 10,
+            "summary": summary,
+            "decision": decision,
+            "debate_output": debate_output
         }
-
-        analysis_results[ticker] = result
-        print(f"[API] ✓ Analysis complete for {ticker}")
-        return jsonify(result), 200
 
         analysis_results[ticker] = result
         print(f"[API] ✓ Analysis complete for {ticker}")
