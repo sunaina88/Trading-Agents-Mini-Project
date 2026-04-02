@@ -1,19 +1,19 @@
-# 🎯 Trading Agents Mini Project
+# 📈 Trading Agents Mini Project
 
 A fully integrated AI-powered trading analysis system that combines technical analysis, news sentiment, social sentiment, machine learning predictions, and multi-agent debate to provide investment insights.
 
-## ✨ Features
+## Features
 
-- 🤖 **Multi-Agent Debate System**: Bullish & Bearish researchers with consensus facilitator
-- 📰 **News Analysis**: Scrapes and analyzes financial news sentiment
-- 💬 **Social Sentiment**: Analyzes Reddit & StockTwits discussions  
-- 📊 **Technical Analysis**: RSI, MACD, Moving Averages, Volume Trends
-- 🧠 **Machine Learning**: RandomForest classifier (5 years training data)
-- 🎨 **Interactive Frontend**: Real-time market charts + analysis results
-- 🔄 **REST API**: Easy integration for custom applications
-- 🚀 **One-Click Setup**: Automated dependency installation
+- **Multi-Agent Debate System**: Bullish and Bearish researchers with consensus facilitator
+- **News Analysis**: Scrapes and analyzes financial news sentiment
+- **Social Sentiment**: Analyzes Reddit and StockTwits discussions
+- **Technical Analysis**: RSI, MACD, moving averages, volume trends
+- **Machine Learning**: RandomForest classifier trained on 5 years of data
+- **Interactive Frontend**: Real-time market charts with analysis results
+- **REST API**: Easy integration for custom applications
+- **One-Click Setup**: Automated dependency installation
 
-## 📊 System Architecture
+## System Architecture
 
 ```
 ┌──────────────────┐
@@ -63,9 +63,9 @@ A fully integrated AI-powered trading analysis system that combines technical an
     └────────────────────────────┘
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
-### 1️⃣ Install (5 minutes)
+### Installation (5 minutes)
 
 **Windows:**
 ```cmd
@@ -83,7 +83,7 @@ pip install -r requirements.txt
 cd tradingvite && npm install && cd ..
 ```
 
-### 2️⃣ Run (3 terminals)
+### Running the System (3 terminals)
 
 **Terminal 1**: Keep Ollama running
 ```bash
@@ -102,13 +102,13 @@ cd tradingvite && npm run dev
 # Opens on http://localhost:5173
 ```
 
-### 3️⃣ Use
+### Using the Application
 - Open **http://localhost:5173/** in browser
 - Select a stock
 - Click "🚀 Run AI Analysis"
 - View results with confidence gauge and summary
 
-## 📊 Available Stocks
+## Available Stocks
 
 ### India BSE (29 stocks)
 **IT/Tech**: RELIANCE.NS, TCS.NS, INFY.NS, WIPRO.NS, TECHM.NS, HCLTECH.NS  
@@ -131,17 +131,7 @@ cd tradingvite && npm run dev
 **Transportation**: UBER  
 **Entertainment**: SPOT
 
-### Hong Kong HKEX (10 stocks)
-**Tech/Internet**: 0700.HK (Tencent), 9988.HK (Alibaba), 3690.HK (Meituan), 9618.HK (JD.com)  
-**Telecom/Utilities**: 0941.HK (China Mobile), 0002.HK (CLP Holdings)  
-**Financial**: 0005.HK (HSBC), 1299.HK (AIA Group)  
-**Energy**: 0883.HK (CNOOC)  
-**Conglomerates**: 0001.HK (CK Hutchison)
-
-### China HKEX
-0700.HK (Tencent), 9988.HK (Alibaba), 3690.HK (Meituan), 9618.HK (JD.com), 0941.HK (China Mobile)
-
-## 📚 Documentation
+## Documentation
 
 | File | Purpose |
 |------|---------|
@@ -192,7 +182,7 @@ GET  /api/tickers
 - **Reddit API**: Social sentiment
 - **StockTwits API**: Trading community sentiment
 
-## 🔄 Analysis Pipeline
+## Analysis Pipeline
 
 1. **Data Collection** (30 seconds)
    - Fetches 5+ years of historical data
@@ -218,7 +208,7 @@ GET  /api/tickers
    - Summary: Detailed analysis
    - All supporting data
 
-## 📈 How Analysis Works
+## How Analysis Works
 
 ### Technical Indicators
 - **RSI** (14-period): Identifies overbought (>70) / oversold (<30)
@@ -251,7 +241,7 @@ GET  /api/tickers
 - Consensus decision reflects agreement strength
 - Confidence reflects signal alignment
 
-## 🎨 Frontend UI
+## Frontend UI
 
 ```
 ┌─ Layout ─────────────────────────────────┐
@@ -277,13 +267,13 @@ GET  /api/tickers
 └──────────────────────────────────────────┘
 ```
 
-## 🎯 Confidence Gauge Colors
+## Confidence Gauge Colors
 
 - **🟢 Green (80-100%)**: Strong consensus, clear signal
 - **🟡 Yellow (40-60%)**: Moderate signal, mixed opinions  
 - **🔴 Red (0-20%)**: Weak signal, uncertain outlook
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 **NOT FINANCIAL ADVICE**
 
@@ -295,7 +285,7 @@ This is an educational project. analysis results are based on:
 
 Do NOT use for real investment decisions without consulting a financial advisor.
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### "Cannot connect to API"
 → Make sure `api_server.py` is running (Terminal 2)
@@ -344,27 +334,27 @@ Trading-Agents-Mini-Project/
     └── vite.config.js
 ```
 
-## 🎓 Learning Outcomes
+## Learning Outcomes
 
 This project demonstrates:
-- ✅ Multi-agent AI systems design
-- ✅ REST API development (Flask)
-- ✅ Machine learning pipeline (feature engineering, training, prediction)
-- ✅ Natural language processing (sentiment analysis)
-- ✅ Technical analysis & indicators
-- ✅ Real-time data processing
-- ✅ Frontend-backend integration
-- ✅ System orchestration
+- Multi-agent AI systems design
+- REST API development (Flask)
+- Machine learning pipeline (feature engineering, training, prediction)
+- Natural language processing (sentiment analysis)
+- Technical analysis & indicators
+- Real-time data processing
+- Frontend-backend integration
+- System orchestration
 
-## 🔐 Data Privacy
+## Data Privacy
 
-- ✅ All processing happens **locally** on your machine
-- ✅ No data is sent to external servers (except yfinance for stock data)
-- ✅ Ollama LLM runs locally (~8GB)
-- ✅ API server only accepts localhost connections
-- ✅ No user authentication or tracking
+- All processing happens **locally** on your machine
+- No data is sent to external servers (except yfinance for stock data)
+- Ollama LLM runs locally (~8GB)
+- API server only accepts localhost connections
+- No user authentication or tracking
 
-## 📞 Support & Contribution
+## Support & Contribution
 
 For issues:
 1. Check error message in terminal
@@ -379,15 +369,13 @@ For contributions:
 - Enhance visualization
 - Optimize performance
 
-## 📝 License
+## License
 
-This project is for educational purposes. Use at your own risk.
+This project is for educational purposes. 
 
 ---
 
 **Created**: March 2026  
-**Status**: ✅ Fully Functional & Tested  
+**Status**: Fully Functional & Tested  
 **Version**: 1.0
-
-**Start here**: [QUICKSTART.md](./QUICKSTART.md)
->>>>>>> 1947aad9b7acfa3ef968b2b21c23e62b365b2765
+**Authors**: Ayush Kumar, Iditri Dutta, Shreya Thakur, Sidhartha Jana, Srijoni Banerji, Sunaina Roy
