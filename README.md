@@ -141,7 +141,7 @@ cd tradingvite && npm run dev
 | **api_server.py** | Backend API endpoints |
 | **Markets.jsx** | Frontend UI components |
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ```
 GET  /api/health
@@ -159,7 +159,7 @@ GET  /api/tickers
      → List all analyzed tickers
 ```
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Backend
 - **Python 3.8+**: Core language
@@ -252,7 +252,6 @@ GET  /api/tickers
 │ │  Countries │  │ ┌──────────────────┐ │  │
 │ │  • IN 🇮🇳   │  │ Confidence: 85%    │ │  │
 │ │  • US 🇺🇸   │  │    🟢 **BUY**     │ │  │
-│ │  • CN 🇨🇳   │  │                    │ │  │
 │ │            │  │ Summary:           │ │  │
 │ │  Stocks    │  │ [Analysis text...] │ │  │
 │ │ • INFY.NS  │  │                    │ │  │
@@ -304,7 +303,7 @@ Do NOT use for real investment decisions without consulting a financial advisor.
 
 For more help, see **INSTALL.md** or **QUICKSTART.md**
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Trading-Agents-Mini-Project/
